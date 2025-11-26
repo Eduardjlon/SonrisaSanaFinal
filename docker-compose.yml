@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  postgres-sonrisasana:
+    image: postgres:16
+    container_name: postgres-sonrisasana
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sonrisasana
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5555:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

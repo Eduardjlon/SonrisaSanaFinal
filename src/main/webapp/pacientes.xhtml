@@ -1,0 +1,163 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="content">
+
+        <h2>Gestión de Pacientes</h2>
+
+        <!-- Mensajes globales -->
+        <h:form id="global">
+            <p:growl id="msgs" showDetail="true" globalOnly="true" />
+        </h:form>
+
+        <!-- FORM PRINCIPAL -->
+        <h:form id="frmPacientes">
+
+            <!-- Buscador -->
+            <p:inputText value="#{pacienteBean.filtroBusqueda}"
+                         placeholder="Buscar por nombre o DPI"
+                         style="width:250px" />
+            <p:commandButton value="Buscar" icon="pi pi-search"
+                             actionListener="#{pacienteBean.buscar}"
+                             update=":frmPacientes:tablaPacientes" />
+
+            <p:commandButton value="Nuevo Paciente" icon="pi pi-plus"
+                             actionListener="#{pacienteBean.nuevo}"
+                             update="dlgPaciente"
+                             oncomplete="PF('dlgPaciente').show()"
+                             styleClass="mb-3"
+                             style="margin-left:10px" />
+
+            <!-- TABLA -->
+            <p:dataTable id="tablaPacientes"
+                         value="#{pacienteBean.pacientes}"
+                         var="p"
+                         paginator="true"
+                         rows="10"
+                         responsiveLayout="scroll">
+
+                <p:column headerText="Nombre">
+                    #{p.nombreCompleto}
+                </p:column>
+
+                <p:column headerText="DPI">
+                    #{p.dpi}
+                </p:column>
+
+                <p:column headerText="Edad">
+                    #{p.edad} años
+                </p:column>
+
+                <p:column headerText="Teléfono">
+                    #{p.telefono}
+                </p:column>
+
+                <p:column headerText="Acciones">
+
+                    <!-- EDITAR -->
+                    <p:commandButton icon="pi pi-pencil"
+                                     update="dlgPaciente"
+                                     oncomplete="PF('dlgPaciente').show()"
+                                     actionListener="#{pacienteBean.editar(p)}" />
+
+                    <!-- ELIMINAR -->
+                    <p:commandButton icon="pi pi-trash"
+                                     actionListener="#{pacienteBean.eliminar(p)}"
+                                     update="tablaPacientes global"
+                                     style="margin-left:5px"
+                                     class="ui-button-danger" />
+
+                    <!-- HISTORIAL -->
+                    <p:commandButton icon="pi pi-clock"
+                                     title="Historial del expediente"
+                                     style="margin-left:5px"
+                                     actionListener="#{pacienteBean.editar(p)}"
+                                     update="dlgHistorial"
+                                     oncomplete="PF('dlgHistorial').show()" />
+                </p:column>
+
+            </p:dataTable>
+
+        </h:form>
+
+        <!-- DIALOGO CREAR/EDITAR -->
+        <p:dialog id="dlgPaciente" widgetVar="dlgPaciente" modal="true"
+                  header="Paciente" width="600">
+
+            <h:form id="frmDialogo">
+
+                <p:panelGrid columns="2" columnClasses="col1,col2" styleClass="grid">
+
+                    <p:outputLabel value="Nombre completo:" />
+                    <p:inputText value="#{pacienteBean.paciente.nombreCompleto}" required="true" />
+
+                    <p:outputLabel value="DPI:" />
+                    <p:inputText value="#{pacienteBean.paciente.dpi}" required="true" />
+
+                    <p:outputLabel value="Fecha nacimiento:" />
+                    <p:datePicker value="#{pacienteBean.paciente.fechaNacimiento}"
+                                  required="true" pattern="yyyy-MM-dd" />
+
+                    <p:outputLabel value="Teléfono:" />
+                    <p:inputText value="#{pacienteBean.paciente.telefono}" />
+
+                    <p:outputLabel value="Dirección:" />
+                    <p:inputTextarea value="#{pacienteBean.paciente.direccion}" />
+
+                    <p:outputLabel value="Alergias:" />
+                    <p:inputTextarea value="#{pacienteBean.paciente.alergias}" />
+
+                    <p:outputLabel value="Condiciones médicas:" />
+                    <p:inputTextarea value="#{pacienteBean.paciente.condicionesMedicas}" />
+
+                    <p:outputLabel value="Observaciones:" />
+                    <p:inputTextarea value="#{pacienteBean.paciente.observaciones}" />
+
+                </p:panelGrid>
+
+                <p:separator/>
+
+                <p:commandButton value="Guardar" icon="pi pi-save"
+                                 actionListener="#{pacienteBean.guardar}"
+                                 update=":frmPacientes:tablaPacientes global"
+                                 oncomplete="PF('dlgPaciente').hide()" />
+
+                <p:commandButton value="Cancelar" icon="pi pi-times"
+                                 actionListener="#{pacienteBean.cancelar}"
+                                 onclick="PF('dlgPaciente').hide()"
+                                 styleClass="ui-button-secondary"
+                                 style="margin-left:10px" />
+
+            </h:form>
+
+        </p:dialog>
+
+        <!-- DIALOGO HISTORIAL -->
+        <p:dialog id="dlgHistorial" widgetVar="dlgHistorial"
+                  header="Historial del expediente"
+                  modal="true" width="500">
+
+            <h:form id="frmHistorial">
+
+                <ui:repeat value="#{pacienteBean.obtenerHistorial(pacienteBean.paciente)}" var="h">
+
+                    <p:panel style="margin-bottom:10px;">
+                        <h:outputText value="[#{h.fecha}] - #{h.descripcion}" />
+                    </p:panel>
+
+                </ui:repeat>
+
+                <p:commandButton value="Cerrar"
+                                 onclick="PF('dlgHistorial').hide()"
+                                 type="button"
+                                 style="margin-top:10px" />
+
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+</ui:composition>

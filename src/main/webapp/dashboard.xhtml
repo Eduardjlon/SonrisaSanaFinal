@@ -1,0 +1,57 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="content">
+        <h1>Dashboard Administrativo</h1>
+
+        <div class="p-grid p-nogutter p-mt-3 dashboard-cards">
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Pacientes nuevos (7 días)</f:facet>
+                    <h2>#{dashboardBean.pacientesSemana}</h2>
+                </p:card>
+            </div>
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Citas programadas hoy</f:facet>
+                    <h2>#{dashboardBean.citasHoy}</h2>
+                </p:card>
+            </div>
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Citas canceladas hoy</f:facet>
+                    <h2>#{dashboardBean.citasCanceladasHoy}</h2>
+                </p:card>
+            </div>
+        </div>
+
+        <div class="p-grid p-nogutter p-mt-3 dashboard-cards">
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Ingresos del mes</f:facet>
+                    <h2>Q #{dashboardBean.ingresosMes}</h2>
+                </p:card>
+            </div>
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Tratamientos esta semana</f:facet>
+                    <h2>#{dashboardBean.tratamientosSemana}</h2>
+                </p:card>
+            </div>
+            <div class="p-col-12 p-md-4">
+                <p:card styleClass="card-metric">
+                    <f:facet name="title">Odontólogos activos</f:facet>
+                    <h2>#{dashboardBean.odontologosActivos}</h2>
+                </p:card>
+            </div>
+        </div>
+
+        <p:spacer height="30"/>
+
+        <h:outputText value="Aquí puedes integrar las gráficas interactivas con PrimeFaces ChartJS (líneas, barras, pastel) utilizando datos de PostgreSQL."/>
+    </ui:define>
+</ui:composition>
