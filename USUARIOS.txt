@@ -1,0 +1,5 @@
+| Usuario    | Contraseña | Rol           |
+| ---------- | ---------- | ------------- |
+| admin      | admin123   | ADMINISTRADOR |
+| odontologo | odonto123  | ODONTOLOGO    |
+| recepcion  | recep123   | RECEPCIONISTA |
