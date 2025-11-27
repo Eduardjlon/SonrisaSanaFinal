@@ -1,0 +1,86 @@
+
+body.login-body {
+    background: linear-gradient(135deg, #e8f1ff, #ffffff);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    animation: fadeIn 0.8s ease;
+}
+
+.login-panel {
+    width: 360px;
+    background: #ffffff;
+    padding: 2.5rem 3rem;
+    border-radius: 18px;
+    box-shadow: 0 12px 45px rgba(0, 60, 130, 0.15);
+    animation: slideUp 0.6s ease;
+    text-align: center;
+}
+
+.login-panel h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.8rem;
+    font-weight: 700;
+    color: #0a3b84;
+    letter-spacing: -0.5px;
+}
+
+
+.login-panel .ui-inputfield {
+    width: 100%;
+    margin-bottom: 1.2rem;
+    border-radius: 10px !important;
+    border: 1px solid #d9e4ff !important;
+    padding: 10px 14px !important;
+    transition: all 0.3s ease;
+}
+
+.login-panel .ui-inputfield:focus {
+    border-color: #3a7bff !important;
+    box-shadow: 0 0 0 3px rgba(58, 123, 255, 0.25);
+}
+
+.login-panel .ui-outputlabel {
+    display: block;
+    text-align: left;
+    margin: 0 0 5px 2px;
+    color: #0a3b84;
+    font-weight: 600;
+}
+
+.login-panel .ui-button {
+    width: 100%;
+    background: #3a7bff !important;
+    border: none !important;
+    padding: 12px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px !important;
+    color: #fff !important;
+    margin-top: 10px;
+    box-shadow: 0 5px 20px rgba(58, 123, 255, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.login-panel .ui-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(58, 123, 255, 0.45);
+}
+
+.login-panel .ui-button:active {
+    transform: scale(0.98);
+}
+
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes slideUp {
+    0% { transform: translateY(25px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
