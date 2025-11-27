@@ -1,0 +1,198 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="content">
+
+        <h2>Gestión de Pacientes</h2>
+
+        <!-- MENSAJES -->
+        <h:form id="global">
+            <p:growl id="msgs" showDetail="true" showSummary="true" globalOnly="true"/>
+        </h:form>
+
+
+        <!-- ================= FORM PRINCIPAL ================= -->
+        <h:form id="frmPacientes">
+
+            <p:inputText value="#{pacienteBean.filtroBusqueda}"
+                         placeholder="Buscar por nombre o DPI"
+                         style="width:250px"/>
+
+            <p:commandButton value="Buscar"
+                             icon="pi pi-search"
+                             actionListener="#{pacienteBean.buscar}"
+                             update="tablaPacientes"/>
+
+            <p:commandButton value="Nuevo Paciente"
+                             icon="pi pi-plus"
+                             actionListener="#{pacienteBean.nuevo}"
+                             update="dlgPaciente"
+                             oncomplete="PF('dlgPaciente').show()"
+                             style="margin-left:10px"/>
+
+            <!-- TABLA -->
+            <p:dataTable id="tablaPacientes"
+                         value="#{pacienteBean.pacientes}"
+                         var="p"
+                         paginator="true"
+                         rows="10"
+                         responsiveLayout="scroll">
+
+                <p:column headerText="Nombre"> #{p.nombreCompleto} </p:column>
+                <p:column headerText="DPI"> #{p.dpi} </p:column>
+                <p:column headerText="Edad"> #{p.edad} años </p:column>
+                <p:column headerText="Teléfono"> #{p.telefono} </p:column>
+
+                <p:column headerText="Acciones">
+
+                    <p:commandButton icon="pi pi-pencil"
+                                     actionListener="#{pacienteBean.editar(p)}"
+                                     update="dlgPaciente"
+                                     oncomplete="PF('dlgPaciente').show()"/>
+
+                    <p:commandButton icon="pi pi-trash"
+                                     actionListener="#{pacienteBean.eliminar(p)}"
+                                     update="tablaPacientes :global:msgs"
+                                     styleClass="ui-button-danger"
+                                     style="margin-left:5px"/>
+
+                    <p:commandButton icon="pi pi-clock"
+                                     actionListener="#{pacienteBean.editar(p)}"
+                                     update="dlgHistorial"
+                                     oncomplete="PF('dlgHistorial').show()"
+                                     style="margin-left:5px"/>
+
+                </p:column>
+            </p:dataTable>
+        </h:form>
+
+
+        <!-- ================= DIALOGO FORMULARIO ================= -->
+        <p:dialog id="dlgPaciente" widgetVar="dlgPaciente"
+                  header="Paciente"
+                  modal="true" width="520">
+
+            <h:form id="frmDialogo">
+
+                <div class="form-container">
+
+                    <!-- Nombre -->
+                    <div class="form-row">
+                        <label class="form-label" for="nombre">Nombre completo:</label>
+                        <p:inputText id="nombre"
+                                     value="#{pacienteBean.paciente.nombreCompleto}"
+                                     placeholder="Ej: Juan Pérez"
+                                     required="true"/>
+                    </div>
+
+                    <!-- DPI -->
+                    <div class="form-row">
+                        <label class="form-label" for="dpi">DPI:</label>
+                        <p:inputText id="dpi"
+                                     value="#{pacienteBean.paciente.dpi}"
+                                     maxlength="13"
+                                     placeholder="13 dígitos sin espacios"
+                                     required="true"/>
+                    </div>
+
+                    <!-- Fecha nacimiento -->
+                    <div class="form-row">
+                        <label class="form-label" for="fnac">Fecha de nacimiento:</label>
+                        <p:datePicker id="fnac"
+                                      value="#{pacienteBean.paciente.fechaNacimiento}"
+                                      showIcon="true"
+                                      pattern="dd/MM/yyyy"
+                                      required="true"/>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="form-row">
+                        <label class="form-label" for="tel">Teléfono:</label>
+                        <p:inputText id="tel"
+                                     value="#{pacienteBean.paciente.telefono}"
+                                     maxlength="8"
+                                     placeholder="8 dígitos"/>
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="form-row">
+                        <label class="form-label" for="dir">Dirección:</label>
+                        <p:inputTextarea id="dir"
+                                         value="#{pacienteBean.paciente.direccion}"
+                                         rows="2"
+                                         placeholder="Dirección completa"/>
+                    </div>
+
+                    <!-- Alergias -->
+                    <div class="form-row">
+                        <label class="form-label" for="alg">Alergias:</label>
+                        <p:inputTextarea id="alg"
+                                         value="#{pacienteBean.paciente.alergias}"
+                                         rows="2"
+                                         placeholder="Separadas por comas"/>
+                    </div>
+
+                    <!-- Condiciones -->
+                    <div class="form-row">
+                        <label class="form-label" for="cond">Condiciones médicas:</label>
+                        <p:inputTextarea id="cond"
+                                         value="#{pacienteBean.paciente.condicionesMedicas}"
+                                         rows="2"/>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="form-row">
+                        <label class="form-label" for="obs">Observaciones:</label>
+                        <p:inputTextarea id="obs"
+                                         value="#{pacienteBean.paciente.observaciones}"
+                                         rows="2"/>
+                    </div>
+
+                </div>
+
+                <p:separator/>
+
+                <p:commandButton value="Guardar"
+                                 icon="pi pi-save"
+                                 actionListener="#{pacienteBean.guardar}"
+                                 update=":frmPacientes:tablaPacientes :global:msgs"
+                                 oncomplete="if (!args.validationFailed) PF('dlgPaciente').hide();"/>
+
+                <p:commandButton value="Cancelar"
+                                 icon="pi pi-times"
+                                 type="button"
+                                 onclick="PF('dlgPaciente').hide()"
+                                 styleClass="ui-button-secondary"
+                                 style="margin-left:10px"/>
+
+            </h:form>
+        </p:dialog>
+
+
+
+        <!-- ================= DIALOGO HISTORIAL ================= -->
+        <p:dialog id="dlgHistorial" widgetVar="dlgHistorial"
+                  header="Historial del expediente"
+                  modal="true" width="500">
+
+            <h:form id="frmHistorial">
+
+                <ui:repeat value="#{pacienteBean.obtenerHistorial(pacienteBean.paciente)}" var="h">
+                    <p:panel style="margin-bottom:10px;">
+                        <h:outputText value="[#{h.fecha}] - #{h.descripcion}"/>
+                    </p:panel>
+                </ui:repeat>
+
+                <p:commandButton value="Cerrar"
+                                 type="button"
+                                 onclick="PF('dlgHistorial').hide()"/>
+            </h:form>
+
+        </p:dialog>
+
+    </ui:define>
+</ui:composition>

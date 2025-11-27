@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,25 +50,50 @@ public abstract class GenericService<T> {
     //      GUARDAR / EDITAR
     // ==========================
 
-    /**
-     * Alias para save() pero usando "guardar" como en UsuarioServicio y PacienteServicio.
-     */
     public T guardar(T entity) {
         return save(entity);
     }
 
+    /**
+     * CORREGIDO:
+     * - persist() → para nuevos (ID null)
+     * - merge() → para existentes
+     * - flush() → fuerza el SQL inmediatamente (evita datos fantasma)
+     */
     public T save(T entity) {
-        return executeInTx(em -> em.merge(entity));
-    }
+        return executeInTx(em -> {
 
+            try {
+                // Obtener método getId() por reflexión
+                Method getIdMethod = entityClass.getMethod("getId");
+                Long id = (Long) getIdMethod.invoke(entity);
+
+                if (id == null) {
+                    // NUEVO → persist()
+                    em.persist(entity);
+                    em.flush(); // fuerza INSERT
+                    return entity;
+                } else {
+                    // EXISTENTE → merge()
+                    T merged = em.merge(entity);
+                    em.flush(); // fuerza UPDATE
+                    return merged;
+                }
+
+            } catch (Exception ex) {
+                throw new RuntimeException(
+                        "Error al guardar entidad " + entityClass.getSimpleName(),
+                        ex
+                );
+            }
+
+        });
+    }
 
     // ==========================
     //          ELIMINAR
     // ==========================
 
-    /**
-     * Elimina usando el objeto (como en UsuarioBean y PacienteBean).
-     */
     public void eliminar(T entity) {
         executeInTxVoid(em -> {
             T ref = em.contains(entity) ? entity : em.merge(entity);
@@ -75,9 +101,6 @@ public abstract class GenericService<T> {
         });
     }
 
-    /**
-     * Elimina usando el ID (método original).
-     */
     public void delete(Long id) {
         executeInTxVoid(em -> {
             T ref = em.find(entityClass, id);
@@ -86,7 +109,6 @@ public abstract class GenericService<T> {
             }
         });
     }
-
 
     // ==========================
     //       TRANSACCIONES
@@ -100,9 +122,11 @@ public abstract class GenericService<T> {
             R result = function.apply(em);
             tx.commit();
             return result;
+
         } catch (RuntimeException e) {
             if (tx.isActive()) tx.rollback();
             throw e;
+
         } finally {
             em.close();
         }

@@ -1,0 +1,101 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="content">
+
+        <h2>Gestión de Tratamientos Odontológicos</h2>
+
+        <h:form id="frmTratamientos">
+
+            <p:growl id="msgs" showSummary="true" showDetail="true" life="4000"/>
+
+            <!-- NUEVO -->
+            <p:commandButton value="Nuevo Tratamiento" icon="pi pi-plus"
+                             actionListener="#{tratamientoBean.nuevo}"
+                             update=":frmTratamientos:dlgTratamiento"
+                             oncomplete="PF('dlgTratamiento').show()"
+                             styleClass="p-mb-3"/>
+
+            <!-- TABLA -->
+            <p:dataTable value="#{tratamientoBean.tratamientos}" var="t"
+                         paginator="true" rows="10" responsiveLayout="scroll">
+
+                <p:column headerText="Nombre"> #{t.nombre} </p:column>
+                <p:column headerText="Descripción"> #{t.descripcion} </p:column>
+                <p:column headerText="Duración (min)"> #{t.duracionMinutos} </p:column>
+                <p:column headerText="Costo (Q)"> #{t.costo} </p:column>
+                <p:column headerText="Especialidad"> #{t.especialidad} </p:column>
+
+                <p:column headerText="Acciones" style="width:150px;">
+                    <p:commandButton icon="pi pi-pencil"
+                                     actionListener="#{tratamientoBean.editar(t)}"
+                                     update=":frmTratamientos:dlgTratamiento"
+                                     oncomplete="PF('dlgTratamiento').show()"
+                                     styleClass="p-button-text p-mr-2"/>
+
+                    <p:commandButton icon="pi pi-trash"
+                                     actionListener="#{tratamientoBean.eliminar(t)}"
+                                     update="frmTratamientos msgs"
+                                     styleClass="p-button-danger p-button-text"
+                                     process="@this">
+                        <p:confirm header="Confirmación"
+                                   message="¿Eliminar este tratamiento?"
+                                   icon="pi pi-exclamation-triangle"/>
+                    </p:commandButton>
+                </p:column>
+
+            </p:dataTable>
+
+            <!-- DIALOGO -->
+            <p:dialog id="dlgTratamiento" widgetVar="dlgTratamiento"
+                      header="Tratamiento" modal="true" resizable="false"
+                      width="550">
+
+                <h:panelGrid columns="2" columnClasses="label, value" styleClass="p-fluid">
+
+                    <h:outputLabel value="Nombre *"/>
+                    <p:inputText value="#{tratamientoBean.seleccionado.nombre}" required="true"/>
+
+                    <h:outputLabel value="Descripción"/>
+                    <p:inputTextarea value="#{tratamientoBean.seleccionado.descripcion}" rows="3"/>
+
+                    <h:outputLabel value="Duración (min) *"/>
+                    <p:inputNumber value="#{tratamientoBean.seleccionado.duracionMinutos}"
+                                   required="true"
+                                   minValue="1" maxValue="300"/>
+
+                    <h:outputLabel value="Costo (Q) *"/>
+                    <p:inputNumber value="#{tratamientoBean.seleccionado.costo}"
+                                   required="true"
+                                   minValue="0"
+                                   mode="currency"
+                                   currency="GTQ"
+                                   locale="es_GT"/>
+
+                    <h:outputLabel value="Especialidad *"/>
+                    <p:selectOneMenu value="#{tratamientoBean.seleccionado.especialidad}">
+                        <f:selectItems value="#{tratamientoBean.especialidades}"
+                                       var="esp"
+                                       itemValue="#{esp}"
+                                       itemLabel="#{esp}"/>
+                    </p:selectOneMenu>
+
+                </h:panelGrid>
+
+                <p:commandButton value="Guardar" icon="pi pi-check"
+                                 actionListener="#{tratamientoBean.guardar}"
+                                 update="frmTratamientos msgs"
+                                 oncomplete="PF('dlgTratamiento').hide()"
+                                 process="@form"
+                                 styleClass="p-mt-3"/>
+            </p:dialog>
+
+        </h:form>
+
+    </ui:define>
+
+</ui:composition>

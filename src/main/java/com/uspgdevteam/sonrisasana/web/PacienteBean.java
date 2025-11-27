@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,11 +35,6 @@ public class PacienteBean implements Serializable {
     public void init() {
         try {
             pacientes = pacienteServicio.listar();
-
-            if (pacientes == null) {
-                pacientes = Collections.emptyList();
-            }
-
         } catch (Exception e) {
             e.printStackTrace();
             pacientes = Collections.emptyList();
@@ -50,75 +46,93 @@ public class PacienteBean implements Serializable {
         }
     }
 
+    // ================================
+    // NUEVO
+    // ================================
     public void nuevo() {
         paciente = new Paciente();
     }
 
+    // ================================
+    // EDITAR
+    // ================================
     public void editar(Paciente p) {
         this.paciente = p;
     }
 
+    // ================================
+    // GUARDAR
+    // ================================
     public void guardar() {
         try {
 
             boolean esNuevo = (paciente.getId() == null);
 
-            // Validación DPI
-            if (pacienteServicio.dpiExiste(paciente.getDpi(), paciente.getId())) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Error", "El DPI ya está registrado."));
+            // -----------------------------
+            // VALIDACIÓN FECHA NACIMIENTO
+            // -----------------------------
+            if (paciente.getFechaNacimiento() == null) {
+                mostrarError("Fecha inválida", "Debe ingresar una fecha de nacimiento.");
                 return;
             }
 
-            // Guardar paciente
-            pacienteServicio.guardar(paciente);
-
-            // Registrar historial
-            if (esNuevo) {
-                historialServicio.guardar(new HistorialExpediente(
-                        paciente,
-                        "Se creó el expediente"
-                ));
-            } else {
-                historialServicio.guardar(new HistorialExpediente(
-                        paciente,
-                        "Se actualizó información del paciente"
-                ));
+            if (paciente.getFechaNacimiento().isAfter(LocalDate.now())) {
+                mostrarError("Fecha inválida", "La fecha de nacimiento no puede ser futura.");
+                return;
             }
+
+            // -----------------------------
+            // GUARDAR (usa validaciones internas del servicio)
+            // -----------------------------
+            try {
+                pacienteServicio.guardar(paciente);
+            } catch (RuntimeException ex) {
+                // errores lanzados desde el servicio (DPI duplicado)
+                mostrarError("Error al guardar", ex.getMessage());
+                return;
+            }
+
+            // -----------------------------
+            // GUARDAR HISTORIAL
+            // -----------------------------
+            String descripcion = esNuevo ?
+                    "Se creó el expediente" :
+                    "Se actualizó información del paciente";
+
+            historialServicio.guardar(
+                    new HistorialExpediente(paciente, descripcion)
+            );
 
             // Recargar lista
             pacientes = pacienteServicio.listar();
 
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage("Paciente guardado correctamente"));
+            mostrarOk("Paciente guardado correctamente");
 
         } catch (Exception e) {
             e.printStackTrace();
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Error",
-                            "No se pudo guardar el paciente."));
+            mostrarError("Error", "No se pudo guardar el paciente.");
         }
     }
 
+    // ================================
+    // ELIMINAR
+    // ================================
     public void eliminar(Paciente p) {
         try {
             pacienteServicio.eliminar(p);
             pacientes = pacienteServicio.listar();
 
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage("Paciente eliminado"));
+            mostrarOk("Paciente eliminado");
 
         } catch (Exception e) {
             e.printStackTrace();
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Error",
-                            "No se pudo eliminar el paciente."));
+            mostrarError("Error", "No se pudo eliminar el paciente.");
         }
     }
 
+    // ================================
+    // BUSCAR
+    // ================================
     public void buscar() {
         try {
             if (filtroBusqueda == null || filtroBusqueda.isBlank()) {
@@ -132,12 +146,15 @@ public class PacienteBean implements Serializable {
         }
     }
 
+    // ================================
+    // CANCELAR
+    // ================================
     public void cancelar() {
         paciente = null;
     }
 
     // ================================
-    //      HISTORIAL
+    // HISTORIAL
     // ================================
     public List<HistorialExpediente> obtenerHistorial(Paciente p) {
         try {
@@ -148,8 +165,22 @@ public class PacienteBean implements Serializable {
         }
     }
 
+    // ================================
+    // UTILIDADES
+    // ================================
+    private void mostrarError(String titulo, String detalle) {
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, titulo, detalle));
+    }
 
+    private void mostrarOk(String mensaje) {
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, mensaje, null));
+    }
+
+    // ================================
     // GETTERS / SETTERS
+    // ================================
     public List<Paciente> getPacientes() { return pacientes; }
 
     public Paciente getPaciente() { return paciente; }

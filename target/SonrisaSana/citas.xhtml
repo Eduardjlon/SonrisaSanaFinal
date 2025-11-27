@@ -1,0 +1,153 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="content">
+
+        <h2>Agenda de Citas</h2>
+
+        <!-- MENSAJES -->
+        <h:form id="global">
+            <p:growl id="msgs" showDetail="true" showSummary="true"/>
+        </h:form>
+
+        <!-- FORM PRINCIPAL -->
+        <h:form id="frmCitas">
+
+            <!-- BOTÓN NUEVA CITA -->
+            <p:commandButton value="Nueva Cita"
+                             icon="pi pi-plus"
+                             actionListener="#{citaBean.prepararNuevaCita}"
+                             update="dlgCita"
+                             oncomplete="PF('dlgCita').show()"
+                             style="margin-bottom:10px"/>
+
+            <!-- CALENDARIO -->
+            <p:schedule value="#{citaBean.modelo}"
+                        widgetVar="calCitas"
+                        timeZone="GMT-6"
+                        locale="es"
+                        allDaySlot="false"
+                        slotDuration="00:30"
+                        minHour="8"
+                        maxHour="20"
+                        style="height:600px">
+
+                <p:ajax event="dateSelect"
+                        listener="#{citaBean.onDateSelect}"
+                        update="dlgCita global"
+                        oncomplete="PF('dlgCita').show()"/>
+
+                <p:ajax event="eventSelect"
+                        listener="#{citaBean.onEventSelect}"
+                        update="dlgCita global"
+                        oncomplete="PF('dlgCita').show()"/>
+
+            </p:schedule>
+
+            <!-- DIALOGO DE CITA -->
+            <p:dialog id="dlgCita" widgetVar="dlgCita"
+                      header="Detalle de Cita"
+                      modal="true" width="600"
+                      resizable="false">
+
+                <p:panelGrid columns="2" columnClasses="col1,col2" styleClass="grid">
+
+                    <!-- PACIENTE -->
+                    <p:outputLabel value="Paciente:" for="paciente"/>
+                    <p:selectOneMenu id="paciente"
+                                     value="#{citaBean.pacienteId}"
+                                     required="true">
+                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.pacientes}"
+                                       var="pac"
+                                       itemValue="#{pac.id}"
+                                       itemLabel="#{pac.nombreCompleto}"/>
+                    </p:selectOneMenu>
+
+                    <!-- ODONTÓLOGO -->
+                    <p:outputLabel value="Odontólogo:" for="odo"/>
+                    <p:selectOneMenu id="odo"
+                                     value="#{citaBean.odontologoId}"
+                                     required="true">
+                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.odontologos}"
+                                       var="o"
+                                       itemValue="#{o.id}"
+                                       itemLabel="#{o.nombreCompleto}"/>
+                    </p:selectOneMenu>
+
+                    <!-- TRATAMIENTO -->
+                    <p:outputLabel value="Tratamiento:" for="trat"/>
+                    <p:selectOneMenu id="trat"
+                                     value="#{citaBean.tratamientoId}"
+                                     required="true">
+                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.tratamientos}"
+                                       var="t"
+                                       itemValue="#{t.id}"
+                                       itemLabel="#{t.nombre}"/>
+                    </p:selectOneMenu>
+
+                    <!-- FECHA INICIO -->
+                    <p:outputLabel value="Inicio:" for="inicio"/>
+                    <p:datePicker id="inicio"
+                                  value="#{citaBean.cita.fechaInicio}"
+                                  pattern="yyyy-MM-dd HH:mm"
+                                  showTime="true"
+                                  hourFormat="24"
+                                  required="true"/>
+
+                    <!-- FECHA FIN -->
+                    <p:outputLabel value="Fin:" for="fin"/>
+                    <p:datePicker id="fin"
+                                  value="#{citaBean.cita.fechaFin}"
+                                  pattern="yyyy-MM-dd HH:mm"
+                                  showTime="true"
+                                  hourFormat="24"
+                                  required="true"/>
+
+                    <!-- ESTADO -->
+                    <p:outputLabel value="Estado:" for="estado"/>
+                    <p:selectOneMenu id="estado"
+                                     value="#{citaBean.cita.estado}">
+                        <f:selectItems value="#{citaBean.estados}"
+                                       var="e"
+                                       itemValue="#{e}"
+                                       itemLabel="#{e}"/>
+                    </p:selectOneMenu>
+
+                    <!-- NOTAS -->
+                    <p:outputLabel value="Notas:" for="notas"/>
+                    <p:inputTextarea id="notas"
+                                     value="#{citaBean.cita.notas}"
+                                     rows="3"/>
+
+                </p:panelGrid>
+
+                <p:separator/>
+
+                <!-- GUARDAR -->
+                <p:commandButton value="Guardar"
+                                 icon="pi pi-save"
+                                 actionListener="#{citaBean.guardarCita}"
+                                 update="frmCitas global calCitas"
+                                 oncomplete="if (!args.validationFailed) PF('dlgCita').hide();"/>
+
+                <!-- CANCELAR -->
+                <p:commandButton value="Cancelar"
+                                 icon="pi pi-times"
+                                 onclick="PF('dlgCita').hide()"
+                                 type="button"
+                                 styleClass="ui-button-secondary"
+                                 style="margin-left:10px"/>
+
+            </p:dialog>
+
+        </h:form>
+
+    </ui:define>
+</ui:composition>
