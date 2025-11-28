@@ -8,24 +8,88 @@
 
 <h:head>
     <title>Sonrisa Sana - Sistema de Gestión Clínica</title>
-    <h:outputStylesheet library="css" name="style.css"/>
+    <h:outputStylesheet library="css" name="layout.css"/>
     <link rel="stylesheet" type="text/css"
           href="#{request.contextPath}/webjars/primeflex/3.3.1/primeflex.min.css"/>
 </h:head>
 
 <h:body>
 
-    <!-- FORM SOLO PARA EL MENÚ -->
     <h:form id="menuForm">
         <p:menubar>
-            <p:menuitem value="Dashboard" outcome="/dashboard.xhtml" icon="pi pi-chart-line"/>
-            <p:menuitem value="Pacientes" outcome="/pacientes.xhtml" icon="pi pi-users"/>
-            <p:menuitem value="Usuarios" outcome="/usuarios.xhtml" icon="pi pi-user-edit"/>
-            <p:menuitem value="Cerrar sesión" actionListener="#{loginBean.logout}" icon="pi pi-sign-out"/>
+
+            <!-- Admin -->
+
+            <p:submenu label="Administrador" icon="pi pi-shield"
+                       rendered="#{loginBean.rol == 'ADMINISTRADOR'}">
+
+                <p:menuitem value="Dashboard"
+                            outcome="/dashboard.xhtml"
+                            icon="pi pi-chart-line"/>
+
+                <p:menuitem value="Pacientes"
+                            outcome="/pacientes.xhtml"
+                            icon="pi pi-users"/>
+
+                <p:menuitem value="Usuarios"
+                            outcome="/usuarios.xhtml"
+                            icon="pi pi-user-edit"/>
+
+                <p:menuitem value="Configuración"
+                            outcome="/configuracion.xhtml"
+                            icon="pi pi-cog"/>
+
+                <p:menuitem value="Reportes"
+                            outcome="/reportes.xhtml"
+                            icon="pi pi-file"/>
+            </p:submenu>
+
+
+            <!-- Odontólogo -->
+
+            <p:submenu label="Odontólogo" icon="pi pi-briefcase"
+                       rendered="#{loginBean.rol == 'ODONTOLOGO'}">
+
+                <p:menuitem value="Mis Pacientes"
+                            outcome="/pacientes.xhtml"
+                            icon="pi pi-users"/>
+
+                <p:menuitem value="Mis Citas"
+                            outcome="/citas.xhtml"
+                            icon="pi pi-calendar"/>
+
+                <p:menuitem value="Mis Archivos"
+                            outcome="/archivos.xhtml"
+                            icon="pi pi-folder"/>
+            </p:submenu>
+
+
+            <!-- Recepcionista -->
+
+            <p:submenu label="Recepcionista" icon="pi pi-id-card"
+                       rendered="#{loginBean.rol == 'RECEPCIONISTA'}">
+
+                <p:menuitem value="Agenda"
+                            outcome="/agenda.xhtml"
+                            icon="pi pi-calendar-clock"/>
+
+                <p:menuitem value="Pacientes"
+                            outcome="/pacientes.xhtml"
+                            icon="pi pi-users"/>
+
+                <p:menuitem value="Facturación"
+                            outcome="/facturacion.xhtml"
+                            icon="pi pi-dollar"/>
+            </p:submenu>
+
+            <!-- Log out -->
+            <p:menuitem value="Cerrar sesión"
+                        actionListener="#{loginBean.logout}"
+                        icon="pi pi-sign-out"/>
+
         </p:menubar>
     </h:form>
 
-    <!-- EL CONTENIDO YA NO ESTÁ DENTRO DE UN FORM -->
     <div class="p-m-3">
         <ui:insert name="content"/>
     </div>

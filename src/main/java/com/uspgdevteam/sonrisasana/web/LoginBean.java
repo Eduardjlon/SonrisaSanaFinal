@@ -23,8 +23,10 @@ public class LoginBean implements Serializable {
 
     private Usuario usuarioLogueado;
 
+
     public void login() {
         Usuario u = usuarioServicio.buscarPorUsername(username);
+
         if (u == null || !passwordValida(password, u.getPasswordHash())) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -32,7 +34,9 @@ public class LoginBean implements Serializable {
                             "Usuario o contraseña incorrectos"));
             return;
         }
+
         this.usuarioLogueado = u;
+
         try {
             FacesContext.getCurrentInstance().getExternalContext()
                     .redirect("dashboard.xhtml");
@@ -41,30 +45,48 @@ public class LoginBean implements Serializable {
         }
     }
 
+
     public void logout() throws IOException {
         FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
         FacesContext.getCurrentInstance().getExternalContext().redirect("login.xhtml");
     }
 
+
     private boolean passwordValida(String raw, String hash) {
-        // Por simplicidad, texto plano. En producción usar BCrypt / Argon2.
+        // Temporal: comparar texto plano
         return raw != null && raw.equals(hash);
     }
 
+
+    public String getRol() {
+        if (usuarioLogueado == null || usuarioLogueado.getRol() == null) {
+            return null;
+        }
+        return usuarioLogueado.getRol().getNombre();
+    }
+
     public boolean isAdministrador() {
-        return usuarioLogueado != null && usuarioLogueado.esAdministrador();
+        return "ADMINISTRADOR".equals(getRol());
     }
 
     public boolean isOdontologo() {
-        return usuarioLogueado != null && usuarioLogueado.esOdontologo();
+        return "ODONTOLOGO".equals(getRol());
     }
 
     public boolean isRecepcionista() {
-        return usuarioLogueado != null && usuarioLogueado.esRecepcionista();
+        return "RECEPCIONISTA".equals(getRol());
     }
+
 
     public Usuario getUsuarioLogueado() {
         return usuarioLogueado;
+    }
+
+    public String getNombreUsuario() {
+        if (usuarioLogueado != null) {
+            return usuarioLogueado.getNombreCompleto();
+        }
+        return "";
     }
 
     public String getUsername() {
