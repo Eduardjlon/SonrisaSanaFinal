@@ -54,9 +54,13 @@
                             outcome="/pacientes.xhtml"
                             icon="pi pi-users"/>
 
-                <p:menuitem value="Mis Citas"
-                            outcome="/citas.xhtml"
+                <p:menuitem value="Agenda"
+                            outcome="/agenda.xhtml"
                             icon="pi pi-calendar"/>
+
+                <p:menuitem value="Tratamienos"
+                            outcome="/tratamientos.xhtml"
+                            icon="pi pi-users"/>
 
                 <p:menuitem value="Mis Archivos"
                             outcome="/archivos.xhtml"
@@ -69,8 +73,8 @@
             <p:submenu label="Recepcionista" icon="pi pi-id-card"
                        rendered="#{loginBean.rol == 'RECEPCIONISTA'}">
 
-                <p:menuitem value="Agenda"
-                            outcome="/agenda.xhtml"
+                <p:menuitem value="Citas"
+                            outcome="/citas.xhtml"
                             icon="pi pi-calendar-clock"/>
 
                 <p:menuitem value="Pacientes"
