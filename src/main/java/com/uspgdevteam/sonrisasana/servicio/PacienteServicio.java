@@ -14,58 +14,53 @@ public class PacienteServicio extends GenericService<Paciente> {
         super(Paciente.class);
     }
 
-    // ================================
-    // LISTAR TODOS
-    // ================================
+    // Listar todos (para ArchivoBean)
+    public List<Paciente> listarTodos() {
+        return findAll();
+    }
+
+    // Buscar por ID (para ArchivoBean)
+    public Paciente buscarPorId(Long id) {
+        return findById(id);
+    }
+
     public List<Paciente> listar() {
         return findAll();
     }
 
-    // ================================
-    // BUSCAR POR NOMBRE O DPI
-    // ================================
+    // Búsqueda por nombre o DPI
     public List<Paciente> buscar(String filtro) {
-        String f = filtro == null ? "" : filtro.trim();
+        String f = filtro == null ? "" : filtro.trim().toLowerCase();
 
         return executeInTx(em -> em.createQuery(
-                        "SELECT p FROM Paciente p " +
-                                "WHERE LOWER(p.nombreCompleto) LIKE :filtro " +
-                                "OR p.dpi LIKE :filtro",
-                        Paciente.class)
-                .setParameter("filtro", "%" + f.toLowerCase() + "%")
-                .getResultList()
+                                "SELECT p FROM Paciente p WHERE " +
+                                        "LOWER(p.nombreCompleto) LIKE :f " +
+                                        "OR p.dpi LIKE :f",
+                                Paciente.class
+                        )
+                        .setParameter("f", "%" + f + "%")
+                        .getResultList()
         );
     }
 
-    // ================================
-    // VALIDAR DPI DUPLICADO
-    // ================================
+    // Validación DPI duplicado
     public boolean dpiExiste(String dpi, Long excluirId) {
 
         if (dpi == null || dpi.isBlank()) return false;
 
-        return executeInTx(em ->
-                em.createQuery(
-                                "SELECT COUNT(p) FROM Paciente p " +
-                                        "WHERE p.dpi = :dpi AND p.id <> :id",
-                                Long.class)
+        return executeInTx(em -> em.createQuery(
+                                "SELECT COUNT(p) FROM Paciente p WHERE p.dpi = :dpi AND p.id <> :id",
+                                Long.class
+                        )
                         .setParameter("dpi", dpi)
                         .setParameter("id", excluirId == null ? -1L : excluirId)
                         .getSingleResult() > 0
         );
     }
 
-    // ================================
-    // GUARDAR PACIENTE (opcional pero recomendado)
-    // ================================
-    /**
-     * Sobrescribimos guardar() para asegurar validaciones
-     * y tener un punto centralizado de reglas futuras.
-     */
     @Override
     public Paciente guardar(Paciente p) {
 
-        // Validación DPI única antes de persistir
         if (dpiExiste(p.getDpi(), p.getId())) {
             throw new RuntimeException("El DPI ya está registrado.");
         }

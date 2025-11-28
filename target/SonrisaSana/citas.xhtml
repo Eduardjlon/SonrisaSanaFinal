@@ -11,143 +11,186 @@
 
         <!-- MENSAJES -->
         <h:form id="global">
-            <p:growl id="msgs" showDetail="true" showSummary="true"/>
+            <p:growl id="msgs" showDetail="true" showSummary="true" globalOnly="true"/>
         </h:form>
 
-        <!-- FORM PRINCIPAL -->
-        <h:form id="frmCitas">
+        <!-- ======================= AGENDA ========================= -->
+        <h:form id="frmAgenda">
 
-            <!-- BOTÓN NUEVA CITA -->
-            <p:commandButton value="Nueva Cita"
-                             icon="pi pi-plus"
-                             actionListener="#{citaBean.prepararNuevaCita}"
-                             update="dlgCita"
-                             oncomplete="PF('dlgCita').show()"
-                             style="margin-bottom:10px"/>
-
-            <!-- CALENDARIO -->
-            <p:schedule value="#{citaBean.modelo}"
-                        widgetVar="calCitas"
-                        timeZone="GMT-6"
+            <p:schedule id="agenda"
+                        value="#{citaBean.eventModel}"
+                        timeZone="America/Guatemala"
                         locale="es"
+                        widgetVar="agendaWidget"
+                        draggable="false"
+                        resizable="false"
                         allDaySlot="false"
                         slotDuration="00:30"
-                        minHour="8"
+                        view="agendaWeek"
+                        minHour="7"
                         maxHour="20"
-                        style="height:600px">
+                        style="margin-bottom:30px;">
 
                 <p:ajax event="dateSelect"
                         listener="#{citaBean.onDateSelect}"
-                        update="dlgCita global"
-                        oncomplete="PF('dlgCita').show()"/>
+                        update=":dlgCita"
+                        oncomplete="PF('dlgCita').show();"/>
 
                 <p:ajax event="eventSelect"
                         listener="#{citaBean.onEventSelect}"
-                        update="dlgCita global"
-                        oncomplete="PF('dlgCita').show()"/>
+                        update=":dlgCita"
+                        oncomplete="PF('dlgCita').show();"/>
 
             </p:schedule>
 
-            <!-- DIALOGO DE CITA -->
-            <p:dialog id="dlgCita" widgetVar="dlgCita"
-                      header="Detalle de Cita"
-                      modal="true" width="600"
-                      resizable="false">
+        </h:form>
 
-                <p:panelGrid columns="2" columnClasses="col1,col2" styleClass="grid">
+        <!-- ======================= DIALOGO CITA ========================= -->
+
+        <p:dialog id="dlgCita"
+                  header="Detalle de Cita"
+                  widgetVar="dlgCita"
+                  modal="true"
+                  resizable="false"
+                  draggable="true"
+                  width="480"
+                  style="max-height: 85vh; overflow-y: auto;"
+                  styleClass="dialog-elegante">
+
+            <h:form id="frmCita" style="padding:10px">
+
+                <p:panelGrid columns="1" styleClass="form-grid" columnClasses="label,value"
+                             layout="grid" style="width:100%">
 
                     <!-- PACIENTE -->
-                    <p:outputLabel value="Paciente:" for="paciente"/>
-                    <p:selectOneMenu id="paciente"
-                                     value="#{citaBean.pacienteId}"
-                                     required="true">
-                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
-                        <f:selectItems value="#{citaBean.pacientes}"
-                                       var="pac"
-                                       itemValue="#{pac.id}"
-                                       itemLabel="#{pac.nombreCompleto}"/>
+                    <p:outputLabel value="Paciente"/>
+                    <p:selectOneMenu value="#{citaBean.cita.paciente}"
+                                     style="width:100%">
+                        <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.pacientes}" var="p"
+                                       itemLabel="#{p.nombreCompleto}"
+                                       itemValue="#{p}"/>
                     </p:selectOneMenu>
 
-                    <!-- ODONTÓLOGO -->
-                    <p:outputLabel value="Odontólogo:" for="odo"/>
-                    <p:selectOneMenu id="odo"
-                                     value="#{citaBean.odontologoId}"
-                                     required="true">
-                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
-                        <f:selectItems value="#{citaBean.odontologos}"
-                                       var="o"
-                                       itemValue="#{o.id}"
-                                       itemLabel="#{o.nombreCompleto}"/>
+                    <!-- ODONTÓLOGO (solo se muestra, sin usarlo para filtrar) -->
+                    <p:outputLabel value="Odontólogo" style="margin-top:10px"/>
+                    <p:selectOneMenu id="odontologo"
+                                     value="#{citaBean.cita.odontologo}"
+                                     style="width:100%">
+                        <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.odontologos}" var="o"
+                                       itemLabel="#{o.nombreCompleto}"
+                                       itemValue="#{o}"/>
                     </p:selectOneMenu>
 
-                    <!-- TRATAMIENTO -->
-                    <p:outputLabel value="Tratamiento:" for="trat"/>
-                    <p:selectOneMenu id="trat"
-                                     value="#{citaBean.tratamientoId}"
-                                     required="true">
-                        <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                    <!-- TRATAMIENTO: SIEMPRE MUESTRA TODOS -->
+                    <p:outputLabel value="Tratamiento" style="margin-top:10px"/>
+                    <p:selectOneMenu id="tratamiento"
+                                     value="#{citaBean.cita.tratamiento}"
+                                     style="width:100%">
+                        <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.tratamientos}"
                                        var="t"
-                                       itemValue="#{t.id}"
-                                       itemLabel="#{t.nombre}"/>
+                                       itemLabel="#{t.nombre} (Q #{t.costo})"
+                                       itemValue="#{t}"/>
+
+                        <p:ajax event="change"
+                                process="@this"
+                                listener="#{citaBean.actualizarPrecios}"
+                                update="precioBase precioTratamiento total"/>
                     </p:selectOneMenu>
 
-                    <!-- FECHA INICIO -->
-                    <p:outputLabel value="Inicio:" for="inicio"/>
-                    <p:datePicker id="inicio"
-                                  value="#{citaBean.cita.fechaInicio}"
-                                  pattern="yyyy-MM-dd HH:mm"
+                    <!-- FECHA -->
+                    <p:outputLabel value="Fecha y Hora" style="margin-top:10px"/>
+                    <p:datePicker value="#{citaBean.cita.fechaInicio}"
                                   showTime="true"
                                   hourFormat="24"
-                                  required="true"/>
-
-                    <!-- FECHA FIN -->
-                    <p:outputLabel value="Fin:" for="fin"/>
-                    <p:datePicker id="fin"
-                                  value="#{citaBean.cita.fechaFin}"
-                                  pattern="yyyy-MM-dd HH:mm"
-                                  showTime="true"
-                                  hourFormat="24"
-                                  required="true"/>
-
-                    <!-- ESTADO -->
-                    <p:outputLabel value="Estado:" for="estado"/>
-                    <p:selectOneMenu id="estado"
-                                     value="#{citaBean.cita.estado}">
-                        <f:selectItems value="#{citaBean.estados}"
-                                       var="e"
-                                       itemValue="#{e}"
-                                       itemLabel="#{e}"/>
-                    </p:selectOneMenu>
+                                  style="width:100%"/>
 
                     <!-- NOTAS -->
-                    <p:outputLabel value="Notas:" for="notas"/>
-                    <p:inputTextarea id="notas"
-                                     value="#{citaBean.cita.notas}"
-                                     rows="3"/>
+                    <p:outputLabel value="Notas" style="margin-top:10px"/>
+                    <p:inputTextarea value="#{citaBean.cita.notas}"
+                                     autoResize="true"
+                                     rows="3"
+                                     style="width:100%"/>
+
+                    <!-- SECCION DE PRECIOS -->
+                    <p:separator style="margin:10px 0"/>
+                    <h3>Precios</h3>
+
+                    <h:panelGrid columns="2" columnClasses="label,value"
+                                 style="width:100%; margin-top:10px">
+
+                        <h:outputText value="Precio base:"/>
+                        <p:inputText id="precioBase"
+                                     value="#{citaBean.cita.precioBase}"
+                                     readonly="true"/>
+
+                        <h:outputText value="Tratamiento:"/>
+                        <p:inputText id="precioTratamiento"
+                                     value="#{citaBean.cita.precioTratamiento}"
+                                     readonly="true"/>
+
+                        <h:outputText value="Total:"/>
+                        <p:inputText id="total"
+                                     value="#{citaBean.cita.total}"
+                                     readonly="true"
+                                     style="font-weight:bold;"/>
+                    </h:panelGrid>
 
                 </p:panelGrid>
 
-                <p:separator/>
 
-                <!-- GUARDAR -->
-                <p:commandButton value="Guardar"
-                                 icon="pi pi-save"
-                                 actionListener="#{citaBean.guardarCita}"
-                                 update="frmCitas global calCitas"
-                                 oncomplete="if (!args.validationFailed) PF('dlgCita').hide();"/>
+                <!-- BOTONES -->
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:15px;">
 
-                <!-- CANCELAR -->
-                <p:commandButton value="Cancelar"
-                                 icon="pi pi-times"
-                                 onclick="PF('dlgCita').hide()"
-                                 type="button"
-                                 styleClass="ui-button-secondary"
-                                 style="margin-left:10px"/>
+                    <p:commandButton value="Guardar"
+                                     actionListener="#{citaBean.guardar}"
+                                     update=":global:msgs :frmAgenda:agenda"
+                                     process="@form"
+                                     styleClass="p-button-success"
+                                     oncomplete="if (!args.validationFailed) PF('dlgCita').hide();"/>
 
-            </p:dialog>
+                    <p:commandButton value="Cancelar"
+                                     type="button"
+                                     styleClass="p-button-secondary"
+                                     onclick="PF('dlgCita').hide();"/>
+                </div>
 
-        </h:form>
+            </h:form>
+
+        </p:dialog>
+
+        <!-- ======================= ESTILOS ========================= -->
+        <style>
+            .dialog-elegante .ui-dialog-titlebar {
+                background: #2563eb !important;
+                color: white !important;
+                font-weight: bold;
+                border-radius: 6px 6px 0 0;
+            }
+
+            .dialog-elegante .ui-dialog-content {
+                border-radius: 0 0 6px 6px;
+            }
+
+            .form-grid .ui-outputlabel {
+                font-weight: bold;
+                margin-bottom: 3px;
+            }
+
+            #agenda {
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                border-radius: 12px;
+                overflow: hidden;
+                animation: fadeIn 0.4s ease;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(5px);}
+                to { opacity: 1; transform: translateY(0);}
+            }
+        </style>
 
     </ui:define>
 </ui:composition>

@@ -7,95 +7,234 @@
 
     <ui:define name="content">
 
-        <h2>Gestión de Tratamientos Odontológicos</h2>
+        <h2 class="page-title">Gestión de Tratamientos Odontológicos</h2>
 
         <h:form id="frmTratamientos">
 
-            <p:growl id="msgs" showSummary="true" showDetail="true" life="4000"/>
+            <p:growl id="msgs" showSummary="true" showDetail="true" life="3500"/>
 
-            <!-- NUEVO -->
+            <!-- BOTÓN NUEVO -->
             <p:commandButton value="Nuevo Tratamiento" icon="pi pi-plus"
                              actionListener="#{tratamientoBean.nuevo}"
                              update=":frmTratamientos:dlgTratamiento"
                              oncomplete="PF('dlgTratamiento').show()"
-                             styleClass="p-mb-3"/>
+                             styleClass="btn-primary mb-3"/>
 
             <!-- TABLA -->
             <p:dataTable value="#{tratamientoBean.tratamientos}" var="t"
-                         paginator="true" rows="10" responsiveLayout="scroll">
+                         paginator="true" rows="10" responsiveLayout="scroll"
+                         styleClass="tabla-modern">
 
-                <p:column headerText="Nombre"> #{t.nombre} </p:column>
-                <p:column headerText="Descripción"> #{t.descripcion} </p:column>
-                <p:column headerText="Duración (min)"> #{t.duracionMinutos} </p:column>
-                <p:column headerText="Costo (Q)"> #{t.costo} </p:column>
-                <p:column headerText="Especialidad"> #{t.especialidad} </p:column>
+                <p:column headerText="Nombre">
+                    <span class="text-dark">#{t.nombre}</span>
+                </p:column>
+
+                <p:column headerText="Descripción">
+                    #{t.descripcion}
+                </p:column>
+
+                <p:column headerText="Duración (min)">
+                    <span class="badge-time">#{t.duracionMinutos} min</span>
+                </p:column>
+
+                <p:column headerText="Costo (Q)">
+                    <span class="badge-price">Q #{t.costo}</span>
+                </p:column>
+
+                <p:column headerText="Especialidad">
+                    <span class="badge-spec">#{t.especialidad}</span>
+                </p:column>
 
                 <p:column headerText="Acciones" style="width:150px;">
+
                     <p:commandButton icon="pi pi-pencil"
                                      actionListener="#{tratamientoBean.editar(t)}"
                                      update=":frmTratamientos:dlgTratamiento"
                                      oncomplete="PF('dlgTratamiento').show()"
-                                     styleClass="p-button-text p-mr-2"/>
+                                     styleClass="btn-edit"/>
 
                     <p:commandButton icon="pi pi-trash"
                                      actionListener="#{tratamientoBean.eliminar(t)}"
                                      update="frmTratamientos msgs"
-                                     styleClass="p-button-danger p-button-text"
+                                     styleClass="btn-delete"
                                      process="@this">
                         <p:confirm header="Confirmación"
                                    message="¿Eliminar este tratamiento?"
                                    icon="pi pi-exclamation-triangle"/>
                     </p:commandButton>
+
                 </p:column>
 
             </p:dataTable>
 
-            <!-- DIALOGO -->
+            <!-- DIÁLOGO -->
             <p:dialog id="dlgTratamiento" widgetVar="dlgTratamiento"
-                      header="Tratamiento" modal="true" resizable="false"
-                      width="550">
+                      header="Tratamiento"
+                      modal="true" draggable="false"
+                      resizable="false"
+                      width="520"
+                      styleClass="dialog-modern"
+                      showEffect="fade" hideEffect="fade">
 
-                <h:panelGrid columns="2" columnClasses="label, value" styleClass="p-fluid">
+                <div class="dialog-body">
 
-                    <h:outputLabel value="Nombre *"/>
-                    <p:inputText value="#{tratamientoBean.seleccionado.nombre}" required="true"/>
+                    <h:panelGrid columns="2" columnClasses="label, value"
+                                 styleClass="p-fluid form-grid">
 
-                    <h:outputLabel value="Descripción"/>
-                    <p:inputTextarea value="#{tratamientoBean.seleccionado.descripcion}" rows="3"/>
+                        <h:outputLabel value="Nombre *"/>
+                        <p:inputText value="#{tratamientoBean.seleccionado.nombre}"
+                                     required="true"
+                                     styleClass="input-modern"/>
 
-                    <h:outputLabel value="Duración (min) *"/>
-                    <p:inputNumber value="#{tratamientoBean.seleccionado.duracionMinutos}"
-                                   required="true"
-                                   minValue="1" maxValue="300"/>
+                        <h:outputLabel value="Descripción"/>
+                        <p:inputTextarea value="#{tratamientoBean.seleccionado.descripcion}"
+                                         rows="3"
+                                         autoResize="true"
+                                         styleClass="input-modern"/>
 
-                    <h:outputLabel value="Costo (Q) *"/>
-                    <p:inputNumber value="#{tratamientoBean.seleccionado.costo}"
-                                   required="true"
-                                   minValue="0"
-                                   mode="currency"
-                                   currency="GTQ"
-                                   locale="es_GT"/>
+                        <h:outputLabel value="Duración (min) *"/>
+                        <p:inputNumber value="#{tratamientoBean.seleccionado.duracionMinutos}"
+                                       required="true" minValue="1" maxValue="300"
+                                       styleClass="input-modern"/>
 
-                    <h:outputLabel value="Especialidad *"/>
-                    <p:selectOneMenu value="#{tratamientoBean.seleccionado.especialidad}">
-                        <f:selectItems value="#{tratamientoBean.especialidades}"
-                                       var="esp"
-                                       itemValue="#{esp}"
-                                       itemLabel="#{esp}"/>
-                    </p:selectOneMenu>
+                        <h:outputLabel value="Costo (Q) *"/>
+                        <p:inputNumber value="#{tratamientoBean.seleccionado.costo}"
+                                       required="true" minValue="0"
+                                       mode="currency" currency="GTQ"
+                                       locale="es_GT"
+                                       styleClass="input-modern"/>
 
-                </h:panelGrid>
+                        <h:outputLabel value="Especialidad *"/>
+                        <p:selectOneMenu value="#{tratamientoBean.seleccionado.especialidad}"
+                                         styleClass="input-modern">
+                            <f:selectItems value="#{tratamientoBean.especialidades}"
+                                           var="esp"
+                                           itemValue="#{esp}"
+                                           itemLabel="#{esp}"/>
+                        </p:selectOneMenu>
 
-                <p:commandButton value="Guardar" icon="pi pi-check"
-                                 actionListener="#{tratamientoBean.guardar}"
-                                 update="frmTratamientos msgs"
-                                 oncomplete="PF('dlgTratamiento').hide()"
-                                 process="@form"
-                                 styleClass="p-mt-3"/>
+                    </h:panelGrid>
+                </div>
+
+                <div class="dialog-footer">
+
+                    <p:commandButton value="Cancelar"
+                                     type="button"
+                                     onclick="PF('dlgTratamiento').hide()"
+                                     styleClass="btn-cancel"/>
+
+                    <p:commandButton value="Guardar" icon="pi pi-check"
+                                     actionListener="#{tratamientoBean.guardar}"
+                                     update="frmTratamientos msgs"
+                                     oncomplete="PF('dlgTratamiento').hide()"
+                                     process="@form"
+                                     styleClass="btn-save"/>
+                </div>
+
             </p:dialog>
 
         </h:form>
 
-    </ui:define>
+        <!-- ESTILOS PERSONALIZADOS -->
+        <style>
+            .page-title {
+                margin-bottom: 1rem;
+                font-size: 1.7rem;
+                font-weight: 600;
+                color: #1e293b;
+            }
+            .btn-primary {
+                background:#2563eb;
+                border:none;
+                padding:8px 16px;
+                border-radius:8px;
+                color:white;
+                font-weight:600;
+                transition:0.3s;
+            }
+            .btn-primary:hover {
+                background:#1d4ed8;
+            }
+            .tabla-modern {
+                border-radius:12px;
+                box-shadow:0 4px 20px rgba(0,0,0,0.05);
+            }
+            .badge-time {
+                background:#e0f2fe;
+                color:#0369a1;
+                padding:4px 10px;
+                border-radius:6px;
+                font-weight:600;
+            }
+            .badge-price {
+                background:#ecfdf5;
+                color:#047857;
+                padding:4px 10px;
+                border-radius:6px;
+                font-weight:600;
+            }
+            .badge-spec {
+                background:#fef3c7;
+                color:#b45309;
+                padding:4px 10px;
+                border-radius:6px;
+                font-weight:600;
+            }
+            .btn-edit {
+                border:none;
+                background:transparent;
+                color:#2563eb;
+                margin-right:6px;
+                transition:0.2s;
+            }
+            .btn-edit:hover {
+                color:#1e40af;
+            }
+            .btn-delete {
+                border:none;
+                background:transparent;
+                color:#dc2626;
+                transition:0.2s;
+            }
+            .btn-delete:hover {
+                color:#991b1b;
+            }
 
+            .dialog-modern .ui-dialog-content {
+                padding:20px;
+                background:#f9fafb;
+            }
+            .dialog-footer {
+                display:flex;
+                justify-content:flex-end;
+                gap:12px;
+                padding:1rem;
+                border-top:1px solid #e5e7eb;
+                background:#f8fafc;
+            }
+            .btn-cancel {
+                background:transparent;
+                color:#475569;
+                border:none;
+                font-weight:500;
+            }
+            .btn-save {
+                background:#16a34a !important;
+                border:none;
+                color:white;
+                font-weight:600;
+                padding:6px 16px;
+                border-radius:8px;
+            }
+            .btn-save:hover {
+                background:#15803d !important;
+            }
+
+            .input-modern {
+                border-radius:8px !important;
+                box-shadow:none !important;
+            }
+        </style>
+
+    </ui:define>
 </ui:composition>

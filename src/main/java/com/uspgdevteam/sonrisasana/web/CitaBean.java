@@ -1,11 +1,17 @@
 package com.uspgdevteam.sonrisasana.web;
 
-import com.uspgdevteam.sonrisasana.entidad.*;
-import com.uspgdevteam.sonrisasana.servicio.*;
+import com.uspgdevteam.sonrisasana.entidad.Cita;
+import com.uspgdevteam.sonrisasana.entidad.Paciente;
+import com.uspgdevteam.sonrisasana.entidad.Tratamiento;
+import com.uspgdevteam.sonrisasana.entidad.Usuario;
+import com.uspgdevteam.sonrisasana.servicio.CitaServicio;
+import com.uspgdevteam.sonrisasana.servicio.PacienteServicio;
+import com.uspgdevteam.sonrisasana.servicio.TratamientoServicio;
+import com.uspgdevteam.sonrisasana.servicio.UsuarioServicio;
 import jakarta.annotation.PostConstruct;
-import jakarta.faces.view.ViewScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.primefaces.event.SelectEvent;
@@ -15,7 +21,6 @@ import org.primefaces.model.ScheduleEvent;
 import org.primefaces.model.ScheduleModel;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,169 +40,123 @@ public class CitaBean implements Serializable {
     @Inject
     private TratamientoServicio tratamientoServicio;
 
-    @Inject
-    private HistorialReprogramacionServicio historialServicio;
+    private ScheduleModel eventModel;
 
-    private ScheduleModel modelo;
-    private Cita cita; // 🔥 NUNCA puede quedar null
+    private Cita cita;
+    private ScheduleEvent<?> evento;
 
     private List<Paciente> pacientes;
     private List<Usuario> odontologos;
-    private List<Tratamiento> tratamientos;
+    private List<Tratamiento> tratamientos;   // 🔹 TODOS los tratamientos
 
-    private Long pacienteId;
-    private Long odontologoId;
-    private Long tratamientoId;
-
-    private final EstadoCita[] estados = EstadoCita.values();
-
+    // ==========================================================
+    // INICIALIZACIÓN
+    // ==========================================================
     @PostConstruct
     public void init() {
+        cargarListas();
+        cargarEventos();
+        nuevaCita();
+    }
+
+    private void cargarListas() {
         pacientes = pacienteServicio.listar();
         odontologos = usuarioServicio.listarOdontologos();
-        tratamientos = tratamientoServicio.listar();
-
-        modelo = new DefaultScheduleModel();
-        cargarCitasEnModelo();
-
-        // 🔥 FIX PRINCIPAL: evita Target Unreachable al cargar la página
-        prepararNuevaCita();
+        tratamientos = tratamientoServicio.listar();   // 🔹 se cargan todos
     }
 
-    /** 🔹 Inicializa cita para evitar null */
-    public void prepararNuevaCita() {
+    // ==========================================================
+    // NUEVA CITA
+    // ==========================================================
+    public void nuevaCita() {
         cita = new Cita();
-        cita.setEstado(EstadoCita.PENDIENTE);
-        cita.setFechaInicio(LocalDateTime.now());
-        cita.setFechaFin(LocalDateTime.now().plusMinutes(30));
-
-        pacienteId = null;
-        odontologoId = null;
-        tratamientoId = null;
     }
 
-    private void cargarCitasEnModelo() {
-        modelo = new DefaultScheduleModel();
+    // ==========================================================
+    // CARGAR EVENTOS AL CALENDARIO
+    // ==========================================================
+    private void cargarEventos() {
+        eventModel = new DefaultScheduleModel();
 
-        LocalDate hoy = LocalDate.now();
-        LocalDateTime inicio = hoy.minusMonths(1).atStartOfDay();
-        LocalDateTime fin = hoy.plusMonths(1).atTime(23, 59);
+        List<Cita> lista = citaServicio.listarTodas();
 
-        List<Cita> citas = citaServicio.listarPorRango(inicio, fin);
+        for (Cita c : lista) {
+            String titulo = c.getPaciente().getNombreCompleto()
+                    + " - " + (c.getTratamiento() != null ? c.getTratamiento().getNombre() : "");
 
-        for (Cita c : citas) {
-            String titulo = c.getPaciente().getNombreCompleto() +
-                    " - " + c.getTratamiento().getNombre();
+            DefaultScheduleEvent<?> ev = DefaultScheduleEvent.builder()
+                    .title(titulo)
+                    .startDate(c.getFechaInicio())
+                    .endDate(c.getFechaFin())
+                    .data(c)
+                    .build();
 
-            DefaultScheduleEvent<Cita> ev =
-                    DefaultScheduleEvent.<Cita>builder()
-                            .title(titulo)
-                            .startDate(c.getFechaInicio())
-                            .endDate(c.getFechaFin())
-                            .data(c)
-                            .build();
-
-            modelo.addEvent(ev);
+            eventModel.addEvent(ev);
         }
     }
 
-    /** 🔹 Clic en un día vacío */
+    // ==========================================================
+    // SELECCIONAR FECHA VACÍA
+    // ==========================================================
     public void onDateSelect(SelectEvent<LocalDateTime> event) {
-        prepararNuevaCita();
-
-        LocalDateTime inicio = event.getObject();
-        cita.setFechaInicio(inicio);
-        cita.setFechaFin(inicio.plusMinutes(30));
+        nuevaCita();
+        cita.setFechaInicio(event.getObject());
     }
 
-    /** 🔹 Clic en evento existente */
-    public void onEventSelect(SelectEvent<ScheduleEvent<Cita>> event) {
-        Cita c = event.getObject().getData();
-        this.cita = c;
-
-        pacienteId = c.getPaciente() != null ? c.getPaciente().getId() : null;
-        odontologoId = c.getOdontologo() != null ? c.getOdontologo().getId() : null;
-        tratamientoId = c.getTratamiento() != null ? c.getTratamiento().getId() : null;
+    // ==========================================================
+    // SELECCIONAR EVENTO EXISTENTE
+    // ==========================================================
+    public void onEventSelect(SelectEvent<ScheduleEvent<?>> ev) {
+        evento = ev.getObject();
+        cita = (Cita) evento.getData();
     }
 
-    public void guardarCita() {
+    // ==========================================================
+    // ACTUALIZAR PRECIOS
+    // ==========================================================
+    public void actualizarPrecios() {
+
+        if (cita.getTratamiento() == null) {
+            cita.setPrecioTratamiento(null);
+            cita.setTotal(cita.getPrecioBase());
+            return;
+        }
+
+        cita.setPrecioTratamiento(cita.getTratamiento().getCosto());
+        cita.setTotal(cita.getPrecioBase().add(cita.getTratamiento().getCosto()));
+    }
+
+    // ==========================================================
+    // GUARDAR
+    // ==========================================================
+    public void guardar() {
         try {
 
-            if (pacienteId == null || odontologoId == null || tratamientoId == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Datos incompletos",
-                                "Debe seleccionar paciente, odontólogo y tratamiento."));
-                return;
-            }
-
-            Paciente pac = pacienteServicio.findById(pacienteId);
-            Usuario odo = usuarioServicio.findById(odontologoId);
-            Tratamiento tra = tratamientoServicio.findById(tratamientoId);
-
-            cita.setPaciente(pac);
-            cita.setOdontologo(odo);
-            cita.setTratamiento(tra);
-
-            // Validar horario laboral
-            if (!citaServicio.esHorarioValido(cita)) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Fuera de horario",
-                                "El odontólogo no atiende en ese horario."));
-                return;
-            }
-
-            // Validar traslape
-            if (citaServicio.hayTraslape(cita)) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Conflicto de agenda",
-                                "Ya existe otra cita asignada en este horario."));
-                return;
-            }
-
-            boolean esNueva = (cita.getId() == null);
-
-            citaServicio.guardar(cita);
-
-            if (esNueva) {
-                historialServicio.guardar(
-                        new HistorialReprogramacion(cita, "Cita creada"));
+            if (cita.getId() == null) {
+                citaServicio.crear(cita);
+                mensaje("Cita creada correctamente", FacesMessage.SEVERITY_INFO);
             } else {
-                historialServicio.guardar(
-                        new HistorialReprogramacion(cita, "Cita actualizada / reprogramada"));
+                citaServicio.actualizar(cita);
+                mensaje("Cita actualizada correctamente", FacesMessage.SEVERITY_INFO);
             }
 
-            cargarCitasEnModelo();
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage("Cita guardada correctamente"));
+            cargarEventos();
+            nuevaCita();
 
         } catch (Exception e) {
-            e.printStackTrace();
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Error",
-                            "No se pudo guardar la cita."));
+            mensaje("Error: " + e.getMessage(), FacesMessage.SEVERITY_ERROR);
         }
     }
 
-    // GETTERS PARA JSF
-    public ScheduleModel getModelo() { return modelo; }
-    public Cita getCita() { return cita; }
 
+    private void mensaje(String msg, FacesMessage.Severity sev) {
+        FacesContext.getCurrentInstance()
+                .addMessage(null, new FacesMessage(sev, msg, null));
+    }
+
+    public ScheduleModel getEventModel() { return eventModel; }
+    public Cita getCita() { return cita; }
     public List<Paciente> getPacientes() { return pacientes; }
     public List<Usuario> getOdontologos() { return odontologos; }
     public List<Tratamiento> getTratamientos() { return tratamientos; }
-
-    public Long getPacienteId() { return pacienteId; }
-    public void setPacienteId(Long pacienteId) { this.pacienteId = pacienteId; }
-
-    public Long getOdontologoId() { return odontologoId; }
-    public void setOdontologoId(Long odontologoId) { this.odontologoId = odontologoId; }
-
-    public Long getTratamientoId() { return tratamientoId; }
-    public void setTratamientoId(Long tratamientoId) { this.tratamientoId = tratamientoId; }
-
-    public EstadoCita[] getEstados() { return estados; }
 }

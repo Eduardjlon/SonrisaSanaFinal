@@ -1,10 +1,11 @@
 package com.uspgdevteam.sonrisasana.web;
 
 import com.uspgdevteam.sonrisasana.entidad.Cita;
-import com.uspgdevteam.sonrisasana.entidad.EstadoCita;
+import com.uspgdevteam.sonrisasana.entidad.Cita.EstadoCita;
 import com.uspgdevteam.sonrisasana.entidad.Paciente;
 import com.uspgdevteam.sonrisasana.servicio.CitaServicio;
 import com.uspgdevteam.sonrisasana.servicio.PacienteServicio;
+
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -38,13 +39,12 @@ public class DashboardBean implements Serializable {
     public void init() {
 
         try {
-
             LocalDate hoy = LocalDate.now();
             LocalDate inicioSemana = hoy.minusDays(7);
             LocalDateTime semanaInicio = inicioSemana.atStartOfDay();
 
             // ==========================
-            // PACIENTES
+            // PACIENTES NUEVOS ESTA SEMANA
             // ==========================
             List<Paciente> pacientes = pacienteServicio.listar();
             if (pacientes == null) pacientes = Collections.emptyList();
@@ -55,7 +55,7 @@ public class DashboardBean implements Serializable {
                     .count();
 
             // ==========================
-            // CITAS HOY
+            // CITAS DEL DÍA
             // ==========================
             LocalDateTime hoyInicio = hoy.atStartOfDay();
             LocalDateTime hoyFin = hoy.plusDays(1).atStartOfDay().minusSeconds(1);
@@ -70,17 +70,20 @@ public class DashboardBean implements Serializable {
                     .count();
 
             // ==========================
-            // INGRESOS DEL MES (placeholder)
+            // INGRESOS DEL MES
+            // (reemplazar cuando tengas módulo de pagos)
             // ==========================
-            ingresosMes = BigDecimal.ZERO;
+            ingresosMes = citasHoyList.stream()
+                    .map(Cita::getTotal)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // ==========================
-            // TRATAMIENTOS
+            // TRATAMIENTOS EN SEMANA (placeholder)
             // ==========================
             tratamientosSemana = citasHoyList.size();
 
             // ==========================
-            // ODONTÓLOGOS ACTIVOS
+            // ODONTÓLOGOS ACTIVOS HOY
             // ==========================
             odontologosActivos = citasHoyList.stream()
                     .filter(c -> c != null &&
@@ -92,7 +95,7 @@ public class DashboardBean implements Serializable {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // para que no explote JSF:
+
             pacientesSemana = 0;
             citasHoy = 0;
             citasCanceladasHoy = 0;
@@ -102,6 +105,7 @@ public class DashboardBean implements Serializable {
         }
     }
 
+    // GETTERS
     public long getPacientesSemana() { return pacientesSemana; }
     public long getCitasHoy() { return citasHoy; }
     public long getCitasCanceladasHoy() { return citasCanceladasHoy; }

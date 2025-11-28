@@ -1,7 +1,6 @@
 package com.uspgdevteam.sonrisasana.entidad;
 
 import jakarta.persistence.*;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -14,27 +13,32 @@ public class ArchivoClinico implements Serializable {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "paciente_id")
+    @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
     @ManyToOne
     @JoinColumn(name = "cita_id")
     private Cita cita;
 
-    @Column(name = "tipo", length = 50)
-    private String tipo; // Imagen, PDF, Radiografía, etc.
+    @Column(name = "tipo", length = 50, nullable = false)
+    private String tipo;
 
-    @Column(name = "nombre_archivo", length = 200)
+    @Column(name = "nombre_archivo", length = 200, nullable = false)
     private String nombreArchivo;
 
-    @Column(name = "url", length = 500)
-    private String url;
+    @Column(name = "ruta_fisica", length = 500, nullable = false)
+    private String rutaFisica;
+
+    @Column(name = "url_publica", length = 500)
+    private String urlPublica;
 
     @Column(name = "fecha_carga", nullable = false)
     private LocalDateTime fechaCarga = LocalDateTime.now();
 
-    public ArchivoClinico() {
-    }
+    public ArchivoClinico() {}
+
+
+    // GETTERS & SETTERS COMPLETOS
 
     public Long getId() {
         return id;
@@ -76,12 +80,20 @@ public class ArchivoClinico implements Serializable {
         this.nombreArchivo = nombreArchivo;
     }
 
-    public String getUrl() {
-        return url;
+    public String getRutaFisica() {
+        return rutaFisica;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setRutaFisica(String rutaFisica) {
+        this.rutaFisica = rutaFisica;
+    }
+
+    public String getUrlPublica() {
+        return urlPublica;
+    }
+
+    public void setUrlPublica(String urlPublica) {
+        this.urlPublica = urlPublica;
     }
 
     public LocalDateTime getFechaCarga() {

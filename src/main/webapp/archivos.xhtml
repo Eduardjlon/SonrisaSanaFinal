@@ -1,0 +1,201 @@
+<ui:composition template="/templates/layout.xhtml"
+                xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:define name="styles">
+        <h:outputStylesheet library="css" name="archivos.css"/>
+    </ui:define>
+
+
+    <ui:define name="content">
+
+        <h2>Gestión de Archivos de Pacientes</h2>
+
+
+        <h:form id="msgsForm">
+            <p:growl id="msgs" showDetail="true" globalOnly="true" />
+        </h:form>
+
+
+        <div class="file-container">
+
+
+
+            <div class="file-sidebar">
+
+                <h3>Pacientes</h3>
+
+                <h:form id="frmFiltro">
+                    <p:inputText value="#{archivoBean.filtro}"
+                                 placeholder="Buscar paciente..."
+                                 style="width:100%; margin-bottom:10px;"
+                                 onkeyup="PF('pacFiltro').filter()" />
+                </h:form>
+
+                <h:form id="frmPacientes">
+                    <p:dataList value="#{archivoBean.pacientesFiltrados}"
+                                var="p"
+                                type="unordered"
+                                widgetVar="pacFiltro">
+
+                        <p:commandLink
+                                styleClass="
+                                    paciente-item
+                                    #{archivoBean.pacienteSeleccionado != null
+                                      and archivoBean.pacienteSeleccionado.id == p.id
+                                      ? 'paciente-activo' : ''}
+                                "
+
+                                actionListener="#{archivoBean.seleccionarPaciente(p)}"
+                                update=":filePanel :msgsForm:msgs">
+
+                            <i class="pi pi-folder folder-icon"></i>
+                            #{p.nombreCompleto}
+
+                        </p:commandLink>
+
+                    </p:dataList>
+                </h:form>
+
+            </div>
+
+
+            <h:panelGroup id="filePanel" layout="block" class="file-panel">
+
+                <h3>
+                    <i class="pi pi-folder-open"></i>
+                    Archivos de:
+                    <span style="font-weight:bold;">
+                        #{archivoBean.pacienteSeleccionado != null
+                                ? archivoBean.pacienteSeleccionado.nombreCompleto
+                                : 'Seleccione un paciente'}
+                    </span>
+                </h3>
+
+                <div class="file-toolbar">
+                    <p:commandButton value="Subir Archivo(s)"
+                                     icon="pi pi-upload"
+                                     onclick="PF('dlgUpload').show()"
+                                     disabled="#{archivoBean.pacienteSeleccionado == null}" />
+                </div>
+
+                <p:dataTable value="#{archivoBean.archivosPaciente}"
+                             var="a"
+                             paginator="true"
+                             rows="10"
+                             rendered="#{not empty archivoBean.archivosPaciente}">
+
+                    <p:column headerText="Tipo">
+                        <i class="pi #{archivoBean.icono(a)}"></i>
+                    </p:column>
+
+                    <p:column headerText="Nombre">
+                        #{a.nombreArchivo}
+                    </p:column>
+
+                    <p:column headerText="Fecha">
+                        <h:outputText value="#{a.fechaCarga}">
+                            <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="Acciones" style="text-align:center;">
+
+
+                        <p:commandLink icon="pi pi-eye"
+                                       rendered="#{archivoBean.esVisualizable(a)}"
+                                       actionListener="#{archivoBean.previsualizar(a)}"
+                                       update=":previewForm"
+                                       oncomplete="PF('dlgPreview').show();" />
+
+
+                        <p:commandLink icon="pi pi-download"
+                                       actionListener="#{archivoBean.descargar(a)}" />
+
+                        <!-- ELIMINAR -->
+                        <p:commandLink icon="pi pi-trash"
+                                       styleClass="ui-button-danger"
+                                       actionListener="#{archivoBean.eliminar(a)}"
+                                       update=":filePanel :msgsForm:msgs" />
+                    </p:column>
+
+                </p:dataTable>
+
+                <h:panelGroup rendered="#{empty archivoBean.archivosPaciente}">
+                    <h:outputText value="No hay archivos para este paciente."/>
+                </h:panelGroup>
+
+            </h:panelGroup>
+
+        </div>
+
+
+
+        <p:dialog id="dlgUpload" widgetVar="dlgUpload"
+                  header="Subir Archivo(s)"
+                  modal="true" width="460">
+
+            <h:form id="frmUpload">
+
+                <h3>Subir archivo(s) para:
+                    <span style="font-weight:bold;">
+                        #{archivoBean.pacienteSeleccionado.nombreCompleto}
+                    </span>
+                </h3>
+
+                <p:fileUpload value="#{archivoBean.archivo}"
+                              mode="simple"
+                              skinSimple="true"
+                              required="true" />
+
+                <p:separator/>
+
+                <p:commandButton value="Subir"
+                                 icon="pi pi-save"
+                                 update=":filePanel :msgsForm:msgs"
+                                 actionListener="#{archivoBean.subirArchivo}"
+                                 oncomplete="if(!args.validationFailed) PF('dlgUpload').hide();" />
+
+                <p:commandButton value="Cancelar"
+                                 type="button"
+                                 icon="pi pi-times"
+                                 onclick="PF('dlgUpload').hide()"
+                                 styleClass="ui-button-secondary"
+                                 style="margin-left:10px" />
+
+            </h:form>
+        </p:dialog>
+
+
+
+        <p:dialog header="Vista previa"
+                  widgetVar="dlgPreview"
+                  modal="true"
+                  width="600" height="600">
+
+            <h:form id="previewForm">
+
+
+                <h:panelGroup rendered="#{archivoBean.previewTipo eq 'imagen'}">
+                    <p:graphicImage value="#{archivoBean.previewContenidoBase64}"
+                                    style="max-width:100%; max-height:500px;"/>
+                </h:panelGroup>
+
+
+                <h:panelGroup rendered="#{archivoBean.previewTipo eq 'pdf'}">
+                    <embed type="application/pdf"
+                           src="#{archivoBean.previewContenidoBase64}"
+                           width="100%"
+                           height="500px"/>
+                </h:panelGroup>
+
+            </h:form>
+
+        </p:dialog>
+
+
+    </ui:define>
+</ui:composition>

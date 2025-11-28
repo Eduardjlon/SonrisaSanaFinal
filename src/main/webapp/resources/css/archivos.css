@@ -1,0 +1,243 @@
+body {
+    font-family: 'Urbanist', sans-serif;
+}
+
+
+h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 20px;
+}
+
+
+.file-container {
+    display: flex;
+    gap: 22px;
+    min-height: 75vh;
+    animation: fadeIn 0.35s ease;
+}
+
+
+.file-sidebar {
+    width: 260px;
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.file-sidebar h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2563eb;
+    margin-bottom: 14px;
+}
+
+#frmFiltro input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #f8fafc;
+    transition: 0.25s ease;
+}
+
+#frmFiltro input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.20);
+    background: #ffffff;
+}
+
+
+
+.paciente-item {
+    display: flex !important;
+    align-items: center;
+    padding: 10px 12px !important;
+    margin-bottom: 6px !important;
+    border-radius: 10px;
+    color: #334155 !important;
+    transition: 0.25s ease;
+    font-size: 14px;
+}
+
+.paciente-item .folder-icon {
+    color: #2563eb;
+    font-size: 16px;
+    margin-right: 8px;
+}
+
+.paciente-item:hover {
+    background: #eef2ff !important;
+    transform: translateX(4px);
+    color: #1e40af !important;
+}
+
+.paciente-activo {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.paciente-activo i {
+    color: white !important;
+}
+
+
+.file-panel {
+    flex-grow: 1;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    animation: fadeIn 0.45s ease;
+}
+
+.file-panel h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e3a8a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+.file-toolbar {
+    margin: 18px 0 14px 0;
+}
+
+.file-toolbar .p-button {
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+    background: #2563eb !important;
+    border: none !important;
+    transition: 0.25s ease;
+}
+
+.file-toolbar .p-button:hover {
+    background: #1d4ed8 !important;
+    transform: translateY(-2px);
+}
+
+
+.ui-datatable, .p-datatable {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+.p-datatable thead {
+    background: #eff6ff !important;
+}
+
+.p-datatable th {
+    padding: 12px !important;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e3a8a !important;
+}
+
+.p-datatable td {
+    padding: 12px !important;
+    font-size: 14px;
+}
+
+.p-datatable tbody tr:hover {
+    background: #f1f5f9 !important;
+    transition: 0.25s ease;
+}
+
+.file-panel .ui-commandlink {
+    font-size: 18px !important;
+    margin-right: 8px !important;
+    transition: 0.25s ease;
+}
+
+.file-panel .ui-commandlink:hover {
+    transform: translateY(-2px);
+}
+
+
+.ui-button-danger {
+    color: #dc2626 !important;
+}
+
+.ui-button-danger:hover {
+    color: #b91c1c !important;
+}
+
+
+.p-emptyMessage {
+    padding: 20px;
+    color: #64748b;
+    font-size: 15px;
+}
+
+
+.ui-dialog {
+    border-radius: 18px !important;
+    animation: fadeIn 0.35s ease;
+}
+
+.ui-dialog-titlebar {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    padding: 12px 18px !important;
+    font-size: 17px !important;
+    border-radius: 18px 18px 0 0 !important;
+}
+
+
+#frmUpload h3 {
+    font-size: 15px;
+    margin-bottom: 14px;
+    font-weight: 700;
+    color: #1e3a8a;
+}
+
+.p-fileupload-simple {
+    border-radius: 10px;
+    padding: 12px;
+    background: #f1f5f9;
+}
+
+.p-fileupload-simple:hover {
+    background: #e2e8f0;
+}
+
+
+#frmUpload .p-button {
+    border-radius: 10px !important;
+    padding: 8px 14px !important;
+}
+
+.ui-button-secondary {
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+.ui-button-secondary:hover {
+    background: #cbd5e1 !important;
+    transform: translateY(-2px);
+}
+
+
+#previewForm img,
+#previewForm embed {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    animation: fadeIn 0.3s ease;
+}
+
+
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
