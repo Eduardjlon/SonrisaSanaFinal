@@ -1,13 +1,12 @@
 package com.uspgdevteam.sonrisasana.web;
 
 import com.uspgdevteam.sonrisasana.entidad.Cita;
-import com.uspgdevteam.sonrisasana.entidad.Cita.EstadoCita;
 import com.uspgdevteam.sonrisasana.entidad.Paciente;
 import com.uspgdevteam.sonrisasana.servicio.CitaServicio;
 import com.uspgdevteam.sonrisasana.servicio.PacienteServicio;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
@@ -19,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Named
-@RequestScoped
+@ViewScoped
 public class DashboardBean implements Serializable {
 
     @Inject
@@ -55,7 +54,7 @@ public class DashboardBean implements Serializable {
                     .count();
 
             // ==========================
-            // CITAS DEL DÍA
+            // CITAS DE HOY
             // ==========================
             LocalDateTime hoyInicio = hoy.atStartOfDay();
             LocalDateTime hoyFin = hoy.plusDays(1).atStartOfDay().minusSeconds(1);
@@ -65,30 +64,37 @@ public class DashboardBean implements Serializable {
 
             citasHoy = citasHoyList.size();
 
+            // CANCELADAS HOY
             citasCanceladasHoy = citasHoyList.stream()
-                    .filter(c -> c != null && c.getEstado() == EstadoCita.CANCELADA)
+                    .filter(c -> c != null &&
+                            c.getEstado() != null &&
+                            "CANCELADA".equalsIgnoreCase(c.getEstado().getNombre()))
                     .count();
 
             // ==========================
-            // INGRESOS DEL MES
-            // (reemplazar cuando tengas módulo de pagos)
+            // INGRESOS DEL MES REAL
             // ==========================
-            ingresosMes = citasHoyList.stream()
+            LocalDateTime inicioMes = hoy.withDayOfMonth(1).atStartOfDay();
+            LocalDateTime finMes = hoy.plusMonths(1).withDayOfMonth(1).atStartOfDay().minusSeconds(1);
+
+            List<Cita> citasMes = citaServicio.listarPorRango(inicioMes, finMes);
+            if (citasMes == null) citasMes = Collections.emptyList();
+
+            ingresosMes = citasMes.stream()
                     .map(Cita::getTotal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             // ==========================
-            // TRATAMIENTOS EN SEMANA (placeholder)
+            // TRATAMIENTOS EN LA SEMANA
             // ==========================
-            tratamientosSemana = citasHoyList.size();
+            List<Cita> citasSemana = citaServicio.listarPorRango(semanaInicio, LocalDateTime.now());
+            tratamientosSemana = citasSemana.size();
 
             // ==========================
             // ODONTÓLOGOS ACTIVOS HOY
             // ==========================
             odontologosActivos = citasHoyList.stream()
-                    .filter(c -> c != null &&
-                            c.getOdontologo() != null &&
-                            c.getOdontologo().getId() != null)
+                    .filter(c -> c != null && c.getOdontologo() != null)
                     .map(c -> c.getOdontologo().getId())
                     .distinct()
                     .count();

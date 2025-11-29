@@ -15,9 +15,9 @@ public class PacienteServicio extends GenericService<Paciente> {
         super(Paciente.class);
     }
 
-    // ===============================
+    // =====================================================
     // LISTADOS
-    // ===============================
+    // =====================================================
 
     public List<Paciente> listar() {
         return findAll();
@@ -27,13 +27,12 @@ public class PacienteServicio extends GenericService<Paciente> {
         return executeInTx(em -> em.createQuery(
                         "SELECT p FROM Paciente p ORDER BY p.nombreCompleto",
                         Paciente.class)
-                .getResultList()
-        );
+                .getResultList());
     }
 
-    // ===============================
-    // BUSCAR
-    // ===============================
+    // =====================================================
+    // BÚSQUEDAS
+    // =====================================================
 
     public Paciente buscarPorId(Long id) {
         return findById(id);
@@ -48,13 +47,12 @@ public class PacienteServicio extends GenericService<Paciente> {
                                 "OR p.dpi LIKE :f",
                         Paciente.class)
                 .setParameter("f", "%" + f + "%")
-                .getResultList()
-        );
+                .getResultList());
     }
 
-    // ===============================
-    // VALIDACIÓN DE DPI
-    // ===============================
+    // =====================================================
+    // VALIDACIONES
+    // =====================================================
 
     public boolean dpiExiste(String dpi, Long excluirId) {
 
@@ -66,30 +64,44 @@ public class PacienteServicio extends GenericService<Paciente> {
                         Long.class)
                 .setParameter("dpi", dpi)
                 .setParameter("id", excluirId == null ? -1L : excluirId)
-                .getSingleResult() > 0
-        );
+                .getSingleResult() > 0);
     }
 
-    // ===============================
-    // GUARDAR (OVERRIDE)
-    // ===============================
+    // =====================================================
+    // GUARDAR (VALIDACIÓN + DATOS AUTOMÁTICOS)
+    // =====================================================
 
     @Override
     public Paciente save(Paciente p) {
 
-        // Validar DPI
+        // Validar DPI duplicado
         if (dpiExiste(p.getDpi(), p.getId())) {
             throw new RuntimeException("El DPI ya está registrado.");
         }
 
-        // Fecha de creación del expediente SOLO si es nuevo
-        if (p.getId() == null && p.getFechaCreacionExpediente() == null) {
-            p.setFechaCreacionExpediente(LocalDateTime.now());
-        }
-
-        // Actualizar fecha de modificación
+        // Actualizar fecha de última modificación
         p.setUltimaActualizacion(LocalDateTime.now());
 
         return super.save(p);
+    }
+
+    // =====================================================
+    // FUNCIONES ÚTILES PARA DASHBOARD
+    // =====================================================
+
+    public List<Paciente> listarEnRango(LocalDateTime inicio, LocalDateTime fin) {
+        return executeInTx(em -> em.createQuery(
+                        "SELECT p FROM Paciente p " +
+                                "WHERE p.fechaCreacionExpediente BETWEEN :ini AND :fin",
+                        Paciente.class)
+                .setParameter("ini", inicio)
+                .setParameter("fin", fin)
+                .getResultList());
+    }
+
+    public long contarPacientes() {
+        return executeInTx(em -> em.createQuery(
+                        "SELECT COUNT(p) FROM Paciente p", Long.class)
+                .getSingleResult());
     }
 }

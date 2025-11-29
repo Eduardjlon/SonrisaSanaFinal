@@ -12,26 +12,53 @@ public class HistorialReprogramacion implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "cita_id")
+    // Relación con cita
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cita_id", nullable = false)
     private Cita cita;
 
-    @Column(nullable = false)
-    private LocalDateTime fecha;
+    @Column(name = "fecha_anterior_inicio")
+    private LocalDateTime fechaAnteriorInicio;
 
-    @Column(nullable = false, length = 300)
-    private String descripcion;
+    @Column(name = "fecha_anterior_fin")
+    private LocalDateTime fechaAnteriorFin;
 
-    public HistorialReprogramacion() {}
+    @Column(name = "fecha_nueva_inicio")
+    private LocalDateTime fechaNuevaInicio;
 
-    public HistorialReprogramacion(Cita cita, String descripcion) {
-        this.cita = cita;
-        this.fecha = LocalDateTime.now();
-        this.descripcion = descripcion;
-    }
+    @Column(name = "fecha_nueva_fin")
+    private LocalDateTime fechaNuevaFin;
+
+    @Column(name = "motivo", length = 255)
+    private String motivo;
+
+    @Column(name = "fecha_registro")
+    private LocalDateTime fechaRegistro = LocalDateTime.now();
+
+    // ===============================
+    // GETTERS & SETTERS
+    // ===============================
 
     public Long getId() { return id; }
+
     public Cita getCita() { return cita; }
-    public LocalDateTime getFecha() { return fecha; }
-    public String getDescripcion() { return descripcion; }
+    public void setCita(Cita cita) { this.cita = cita; }
+
+    public LocalDateTime getFechaAnteriorInicio() { return fechaAnteriorInicio; }
+    public void setFechaAnteriorInicio(LocalDateTime fechaAnteriorInicio) { this.fechaAnteriorInicio = fechaAnteriorInicio; }
+
+    public LocalDateTime getFechaAnteriorFin() { return fechaAnteriorFin; }
+    public void setFechaAnteriorFin(LocalDateTime fechaAnteriorFin) { this.fechaAnteriorFin = fechaAnteriorFin; }
+
+    public LocalDateTime getFechaNuevaInicio() { return fechaNuevaInicio; }
+    public void setFechaNuevaInicio(LocalDateTime fechaNuevaInicio) { this.fechaNuevaInicio = fechaNuevaInicio; }
+
+    public LocalDateTime getFechaNuevaFin() { return fechaNuevaFin; }
+    public void setFechaNuevaFin(LocalDateTime fechaNuevaFin) { this.fechaNuevaFin = fechaNuevaFin; }
+
+    public String getMotivo() { return motivo; }
+    public void setMotivo(String motivo) { this.motivo = motivo; }
+
+    public LocalDateTime getFechaRegistro() { return fechaRegistro; }
+    public void setFechaRegistro(LocalDateTime fechaRegistro) { this.fechaRegistro = fechaRegistro; }
 }

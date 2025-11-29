@@ -31,6 +31,19 @@
             <version>42.7.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+
+
         <!-- PrimeFaces (NO MODIFICAR VERSIÓN) -->
         <dependency>
             <groupId>org.primefaces</groupId>

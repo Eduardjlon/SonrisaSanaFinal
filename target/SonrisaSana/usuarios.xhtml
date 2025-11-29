@@ -8,29 +8,28 @@
 
     <ui:define name="content">
 
-        <!-- FORM PRINCIPAL -->
         <h:form id="frmUsuarios">
 
             <h2>Gestión de Usuarios</h2>
 
-            <p:growl id="msgs" showDetail="true" showSummary="true" life="4000"/>
+            <p:growl id="msgs" showDetail="true" showSummary="true" life="3000"/>
 
-
-            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+            <!-- CONFIRMACIONES -->
+            <p:confirmDialog global="true">
                 <p:commandButton value="Sí" type="button"
-                                 styleClass="ui-confirmdialog-yes p-button-danger" />
+                                 styleClass="ui-confirmdialog-yes p-button-danger"/>
                 <p:commandButton value="No" type="button"
-                                 styleClass="ui-confirmdialog-no p-button-secondary" />
+                                 styleClass="ui-confirmdialog-no p-button-secondary"/>
             </p:confirmDialog>
 
-            <!-- NUEVO -->
+            <!-- NUEVO USUARIO -->
             <p:commandButton value="Nuevo usuario" icon="pi pi-plus"
                              actionListener="#{usuarioBean.nuevo}"
                              update=":frmUsuarios:dlgUsuario"
                              oncomplete="PF('dlgUsuario').show()"
                              styleClass="p-button-sm p-mb-3"/>
 
-            <!-- TABLA -->
+            <!-- TABLA DE USUARIOS -->
             <p:dataTable value="#{usuarioBean.usuarios}" var="u"
                          paginator="true" rows="10" responsiveLayout="scroll">
 
@@ -38,49 +37,38 @@
                 <p:column headerText="Usuario"> #{u.username} </p:column>
                 <p:column headerText="Correo"> #{u.email} </p:column>
                 <p:column headerText="Rol"> #{u.rol.nombre} </p:column>
-
                 <p:column headerText="Especialidad">
-                    <h:outputText value="#{u.especialidad != null ? u.especialidad : '-'}"/>
+                    <h:outputText value="#{u.especialidad != null ? u.especialidad.nombre : '-'}"/>
                 </p:column>
 
-                <p:column headerText="Acciones" style="width:190px">
+                <p:column headerText="Acciones" style="width:180px">
 
-
-                    <!-- EDITAR -->
-                    <p:commandButton icon="pi pi-pencil" title="Editar"
+                    <p:commandButton icon="pi pi-pencil"
                                      actionListener="#{usuarioBean.editar(u)}"
                                      update=":frmUsuarios:dlgUsuario"
                                      oncomplete="PF('dlgUsuario').show()"
-                                     process="@this"
                                      styleClass="p-button-text p-mr-2"/>
 
-                    <!-- CAMBIAR PASSWORD -->
                     <p:commandButton icon="pi pi-key"
                                      actionListener="#{usuarioBean.prepararCambioPassword(u)}"
                                      update=":frmUsuarios:dlgPassword"
                                      oncomplete="PF('dlgPassword').show()"
-                                     process="@this"
                                      styleClass="p-button-text p-button-warning p-mr-2"/>
 
-                    <!-- ELIMINAR -->
                     <p:commandButton icon="pi pi-trash"
                                      actionListener="#{usuarioBean.eliminar(u)}"
-                                     update=":frmUsuarios :frmUsuarios:msgs"
-                                     process="@this"
+                                     update=":frmUsuarios:msgs"
                                      styleClass="p-button-text p-button-danger">
-                        <p:confirm header="Confirmación"
-                                   message="¿Eliminar usuario?"
-                                   icon="pi pi-exclamation-triangle"/>
+                        <p:confirm header="Confirmar" message="¿Eliminar usuario?" icon="pi pi-exclamation-triangle"/>
                     </p:commandButton>
-
 
                 </p:column>
 
             </p:dataTable>
 
             <!-- DIALOGO USUARIO -->
-            <p:dialog id="dlgUsuario" widgetVar="dlgUsuario" modal="true"
-                      header="Usuario" closable="true" resizable="false" width="480">
+            <p:dialog id="dlgUsuario" widgetVar="dlgUsuario" modal="true" width="500"
+                      header="Usuario" closable="true" resizable="false">
 
                 <h:panelGrid columns="2" columnClasses="label,value" styleClass="p-fluid">
 
@@ -93,81 +81,56 @@
                     <h:outputLabel value="Correo"/>
                     <p:inputText value="#{usuarioBean.seleccionado.email}" required="true"/>
 
+                    <!-- CONTRASEÑA SOLO NUEVO USUARIO -->
+                    <h:outputLabel value="Contraseña" rendered="#{usuarioBean.seleccionado.id == null}"/>
+                    <p:password value="#{usuarioBean.seleccionado.passwordHash}" rendered="#{usuarioBean.seleccionado.id == null}" required="true"/>
+
                     <h:outputLabel value="Rol"/>
                     <p:selectOneMenu value="#{usuarioBean.seleccionado.rol}"
                                      converter="omnifaces.SelectItemsConverter">
                         <f:selectItems value="#{usuarioBean.roles}" var="r"
                                        itemValue="#{r}" itemLabel="#{r.nombre}"/>
-                        <p:ajax update="especialidadRow horarioRow"/>
+                        <p:ajax update=":frmUsuarios:espRow :frmUsuarios:horarioRow"/>
                     </p:selectOneMenu>
 
-                    <!-- ESPECIALIDAD (solo si rol = odontólogo) -->
-                    <h:panelGroup id="especialidadRow"
-                                  layout="block"
+                    <!-- ESPECIALIDAD SOLO PARA ODONTOLOGOS -->
+                    <h:panelGroup id="espRow" layout="block"
                                   rendered="#{usuarioBean.seleccionado.esOdontologo()}">
-
-                        <h:panelGrid columns="2" columnClasses="label,value" styleClass="p-fluid">
-                            <h:outputLabel value="Especialidad"/>
-                            <p:selectOneMenu id="especialidad"
-                                             value="#{usuarioBean.seleccionado.especialidad}">
-                                <f:selectItems value="#{usuarioBean.especialidades}"
-                                               var="esp"
-                                               itemValue="#{esp}"
-                                               itemLabel="#{esp}"/>
-                            </p:selectOneMenu>
-                        </h:panelGrid>
-
+                        <h:outputLabel value="Especialidad"/>
+                        <p:selectOneMenu value="#{usuarioBean.seleccionado.especialidad}"
+                                         converter="omnifaces.SelectItemsConverter">
+                            <f:selectItems value="#{usuarioBean.especialidades}" var="esp"
+                                           itemValue="#{esp}" itemLabel="#{esp.nombre}"/>
+                        </p:selectOneMenu>
                     </h:panelGroup>
 
                     <!-- HORARIO LABORAL -->
-                    <h:panelGroup id="horarioRow"
-                                  layout="block"
+                    <h:panelGroup id="horarioRow" layout="block"
                                   rendered="#{usuarioBean.seleccionado.esOdontologo()}">
 
-                        <h3 style="margin-top:20px">Horario de atención</h3>
+                        <h3>Horario de atención</h3>
 
-                        <h:panelGrid columns="2" columnClasses="label,value" styleClass="p-fluid">
+                        <h:panelGrid columns="2" styleClass="p-fluid">
 
                             <h:outputLabel value="Día inicio"/>
                             <p:selectOneMenu value="#{usuarioBean.seleccionado.diaInicio}" required="true">
-                                <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
-                                <f:selectItem itemLabel="LUNES" itemValue="LUNES"/>
-                                <f:selectItem itemLabel="MARTES" itemValue="MARTES"/>
-                                <f:selectItem itemLabel="MIERCOLES" itemValue="MIERCOLES"/>
-                                <f:selectItem itemLabel="JUEVES" itemValue="JUEVES"/>
-                                <f:selectItem itemLabel="VIERNES" itemValue="VIERNES"/>
-                                <f:selectItem itemLabel="SABADO" itemValue="SABADO"/>
-                                <f:selectItem itemLabel="DOMINGO" itemValue="DOMINGO"/>
+                                <f:selectItems value="#{usuarioBean.diasSemana}"/>
                             </p:selectOneMenu>
 
                             <h:outputLabel value="Día fin"/>
                             <p:selectOneMenu value="#{usuarioBean.seleccionado.diaFin}" required="true">
-                                <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
-                                <f:selectItem itemLabel="LUNES" itemValue="LUNES"/>
-                                <f:selectItem itemLabel="MARTES" itemValue="MARTES"/>
-                                <f:selectItem itemLabel="MIERCOLES" itemValue="MIERCOLES"/>
-                                <f:selectItem itemLabel="JUEVES" itemValue="JUEVES"/>
-                                <f:selectItem itemLabel="VIERNES" itemValue="VIERNES"/>
-                                <f:selectItem itemLabel="SABADO" itemValue="SABADO"/>
-                                <f:selectItem itemLabel="DOMINGO" itemValue="DOMINGO"/>
+                                <f:selectItems value="#{usuarioBean.diasSemana}"/>
                             </p:selectOneMenu>
 
                             <h:outputLabel value="Hora inicio"/>
                             <p:datePicker value="#{usuarioBean.seleccionado.horaInicio}"
-                                          pattern="HH:mm"
-                                          showTime="true"
-                                          timeOnly="true"
-                                          hourFormat="24"
-                                          required="true"/>
+                                          pattern="HH:mm" showTime="true"
+                                          timeOnly="true" hourFormat="24"/>
 
                             <h:outputLabel value="Hora fin"/>
                             <p:datePicker value="#{usuarioBean.seleccionado.horaFin}"
-                                          pattern="HH:mm"
-                                          showTime="true"
-                                          timeOnly="true"
-                                          hourFormat="24"
-                                          required="true"/>
-
+                                          pattern="HH:mm" showTime="true"
+                                          timeOnly="true" hourFormat="24"/>
                         </h:panelGrid>
 
                     </h:panelGroup>
@@ -176,13 +139,12 @@
 
                 <p:commandButton value="Guardar"
                                  actionListener="#{usuarioBean.guardar}"
-                                 update="frmUsuarios msgs"
+                                 update=":frmUsuarios:msgs"
                                  oncomplete="PF('dlgUsuario').hide()"
                                  process="@form"
                                  styleClass="p-mt-3"/>
 
             </p:dialog>
-
 
             <!-- DIALOGO PASSWORD -->
             <p:dialog id="dlgPassword" widgetVar="dlgPassword" modal="true" width="450"
@@ -203,7 +165,7 @@
 
                 <p:commandButton value="Actualizar contraseña"
                                  actionListener="#{usuarioBean.cambiarPassword}"
-                                 update="frmUsuarios msgs"
+                                 update=":frmUsuarios:msgs"
                                  process="@form"
                                  oncomplete="PF('dlgPassword').hide()"
                                  styleClass="p-mt-3 p-button-warning"/>

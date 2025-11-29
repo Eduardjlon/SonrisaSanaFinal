@@ -20,8 +20,14 @@
         <p:outputLabel for="password" value="Contraseña"/>
         <p:password id="password" value="#{loginBean.password}" required="true"/>
 
-        <p:commandButton value="Ingresar" actionListener="#{loginBean.login}"
-                         update="msgs" styleClass="p-mt-3" icon="pi pi-sign-in"/>
+        <p:commandButton value="Ingresar"
+                         action="#{loginBean.login}"
+                         process="@form"
+                         update="@form"
+                         ajax="false"
+                         icon="pi pi-sign-in"
+                         styleClass="p-mt-3"/>
+
     </div>
 </h:form>
 </h:body>

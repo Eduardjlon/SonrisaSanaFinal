@@ -17,6 +17,9 @@
         <class>com.uspgdevteam.sonrisasana.entidad.ArchivoClinico</class>
         <class>com.uspgdevteam.sonrisasana.entidad.HorarioOdontologo</class>
         <class>com.uspgdevteam.sonrisasana.entidad.HistorialReprogramacion</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.EstadoCita</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.Especialidad</class>
+
 
 
         <properties>

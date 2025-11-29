@@ -21,9 +21,9 @@ public abstract class GenericService<T> {
         this.entityClass = entityClass;
     }
 
-    // ==========================
-    //      BÚSQUEDAS
-    // ==========================
+    // ==========================================================
+    // BÚSQUEDAS
+    // ==========================================================
 
     public T findById(Long id) {
         EntityManager em = jpaUtil.getEntityManager();
@@ -46,53 +46,52 @@ public abstract class GenericService<T> {
         }
     }
 
-    // ==========================
-    //      GUARDAR / EDITAR
-    // ==========================
+    // ==========================================================
+    // GUARDAR / EDITAR
+    // ==========================================================
 
     public T guardar(T entity) {
         return save(entity);
     }
 
     /**
-     * CORREGIDO:
-     * - persist() → para nuevos (ID null)
-     * - merge() → para existentes
-     * - flush() → fuerza el SQL inmediatamente (evita datos fantasma)
+     * GUARDA ENTIDAD SEGURA Y ESTABLE PARA JPA + POSTGRES
+     * - persist() para nuevos (ID null)
+     * - merge() para existentes
+     * - flush() para forzar SQL inmediato
      */
     public T save(T entity) {
         return executeInTx(em -> {
 
             try {
-                // Obtener método getId() por reflexión
-                Method getIdMethod = entityClass.getMethod("getId");
-                Long id = (Long) getIdMethod.invoke(entity);
+                // Obtener ID por reflexión
+                Method getId = entityClass.getMethod("getId");
+                Long id = (Long) getId.invoke(entity);
 
                 if (id == null) {
-                    // NUEVO → persist()
+                    // NUEVA ENTIDAD
                     em.persist(entity);
-                    em.flush(); // fuerza INSERT
-                    return entity;
+                    em.flush();
+                    return entity; // persist mantiene referencia original
                 } else {
-                    // EXISTENTE → merge()
+                    // EXISTENTE → SE NECESITA merge()
                     T merged = em.merge(entity);
-                    em.flush(); // fuerza UPDATE
+                    em.flush();
                     return merged;
                 }
 
             } catch (Exception ex) {
                 throw new RuntimeException(
-                        "Error al guardar entidad " + entityClass.getSimpleName(),
+                        "Error al guardar entidad " + entityClass.getSimpleName() + ": " + ex.getMessage(),
                         ex
                 );
             }
-
         });
     }
 
-    // ==========================
-    //          ELIMINAR
-    // ==========================
+    // ==========================================================
+    // ELIMINAR
+    // ==========================================================
 
     public void eliminar(T entity) {
         executeInTxVoid(em -> {
@@ -110,13 +109,14 @@ public abstract class GenericService<T> {
         });
     }
 
-    // ==========================
-    //       TRANSACCIONES
-    // ==========================
+    // ==========================================================
+    // TRANSACCIONES
+    // ==========================================================
 
     protected <R> R executeInTx(Function<EntityManager, R> function) {
         EntityManager em = jpaUtil.getEntityManager();
         EntityTransaction tx = em.getTransaction();
+
         try {
             tx.begin();
             R result = function.apply(em);
@@ -126,6 +126,10 @@ public abstract class GenericService<T> {
         } catch (RuntimeException e) {
             if (tx.isActive()) tx.rollback();
             throw e;
+
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            throw new RuntimeException("Error en transacción: " + e.getMessage(), e);
 
         } finally {
             em.close();

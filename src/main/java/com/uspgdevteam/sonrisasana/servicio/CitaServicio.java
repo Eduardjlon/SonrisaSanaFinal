@@ -1,82 +1,65 @@
 package com.uspgdevteam.sonrisasana.servicio;
 
-import com.uspgdevteam.sonrisasana.entidad.Cita;
-import com.uspgdevteam.sonrisasana.entidad.Paciente;
-import com.uspgdevteam.sonrisasana.entidad.Tratamiento;
-import com.uspgdevteam.sonrisasana.entidad.Usuario;
-
-import jakarta.ejb.Stateless;
+import com.uspgdevteam.sonrisasana.entidad.*;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.PersistenceUnit;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Stateless
-public class CitaServicio {
-
-    @PersistenceUnit(unitName = "SonrisaPU")
-    private EntityManagerFactory emf;
-
-    private EntityManager em() {
-        return emf.createEntityManager();
-    }
+@Named
+@ApplicationScoped
+public class CitaServicio extends GenericService<Cita> {
 
     private static final BigDecimal PRECIO_BASE = new BigDecimal("300.00");
 
+    public CitaServicio() {
+        super(Cita.class);
+    }
 
-    // =====================================================
-    // CREAR
-    // =====================================================
+    // ==========================================================
+    // CREAR CITA
+    // ==========================================================
     public Cita crear(Cita cita) {
-        EntityManager em = em();
-        EntityTransaction tx = em.getTransaction();
+        return executeInTx(em -> {
 
-        try {
-            tx.begin();
-
+            // Tratamiento
             Tratamiento t = em.find(Tratamiento.class, cita.getTratamiento().getId());
 
+            // Fecha fin automática
             LocalDateTime inicio = cita.getFechaInicio();
             LocalDateTime fin = inicio.plusMinutes(t.getDuracionMinutos());
             cita.setFechaFin(fin);
 
-            cita.setEstado(Cita.EstadoCita.CONFIRMADA);
+            // Estado → ENTIDAD REAL
+            EstadoCita estado = em.find(EstadoCita.class, "CONFIRMADA");
+            cita.setEstado(estado);
 
+            // Costos
             cita.setPrecioBase(PRECIO_BASE);
             cita.setPrecioTratamiento(t.getCosto());
             cita.setTotal(PRECIO_BASE.add(t.getCosto()));
 
+            // Validar disponibilidad
             if (!estaDisponibleInternal(em, cita.getOdontologo(), inicio, fin)) {
                 throw new RuntimeException("El odontólogo NO está disponible en ese horario.");
             }
 
             em.persist(cita);
+            em.flush();
 
-            tx.commit();
             return cita;
-
-        } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
-            throw e;
-
-        } finally {
-            em.close();
-        }
+        });
     }
 
-    // =====================================================
-    // ACTUALIZAR
-    // =====================================================
+    // ==========================================================
+    // ACTUALIZAR CITA
+    // ==========================================================
     public Cita actualizar(Cita cita) {
-        EntityManager em = em();
-        EntityTransaction tx = em.getTransaction();
 
-        try {
-            tx.begin();
+        return executeInTx(em -> {
 
             Tratamiento t = em.find(Tratamiento.class, cita.getTratamiento().getId());
 
@@ -89,36 +72,30 @@ public class CitaServicio {
             cita.setTotal(PRECIO_BASE.add(t.getCosto()));
 
             if (!estaDisponibleActualizarInternal(em, cita, inicio, fin)) {
-                throw new RuntimeException("El odontólogo NO está disponible en ese horario (actualización).");
+                throw new RuntimeException("El odontólogo NO está disponible en el nuevo horario.");
             }
 
             Cita merged = em.merge(cita);
+            em.flush();
 
-            tx.commit();
             return merged;
-
-        } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
-            throw e;
-
-        } finally {
-            em.close();
-        }
+        });
     }
 
-    // =====================================================
+    // ==========================================================
     // DISPONIBILIDAD (CREAR)
-    // =====================================================
-    private boolean estaDisponibleInternal(EntityManager em, Usuario odontologo, LocalDateTime inicio, LocalDateTime fin) {
+    // ==========================================================
+    private boolean estaDisponibleInternal(EntityManager em, Usuario odontologo,
+                                           LocalDateTime inicio, LocalDateTime fin) {
+
         String jpql =
                 "SELECT COUNT(c) FROM Cita c " +
-                        "WHERE c.odontologo = :o " +
-                        "AND c.estado <> :cancelada " +
+                        "WHERE c.odontologo = :odo " +
+                        "AND c.estado.nombre <> 'CANCELADA' " +
                         "AND (c.fechaInicio < :fin AND c.fechaFin > :inicio)";
 
         Long count = em.createQuery(jpql, Long.class)
-                .setParameter("o", odontologo)
-                .setParameter("cancelada", Cita.EstadoCita.CANCELADA)
+                .setParameter("odo", odontologo)
                 .setParameter("inicio", inicio)
                 .setParameter("fin", fin)
                 .getSingleResult();
@@ -126,22 +103,22 @@ public class CitaServicio {
         return count == 0;
     }
 
-    // =====================================================
+    // ==========================================================
     // DISPONIBILIDAD (ACTUALIZAR)
-    // =====================================================
-    private boolean estaDisponibleActualizarInternal(EntityManager em, Cita cita, LocalDateTime inicio, LocalDateTime fin) {
+    // ==========================================================
+    private boolean estaDisponibleActualizarInternal(EntityManager em, Cita cita,
+                                                     LocalDateTime inicio, LocalDateTime fin) {
 
         String jpql =
                 "SELECT COUNT(c) FROM Cita c " +
-                        "WHERE c.odontologo = :o " +
+                        "WHERE c.odontologo = :odo " +
                         "AND c.id <> :id " +
-                        "AND c.estado <> :cancelada " +
+                        "AND c.estado.nombre <> 'CANCELADA' " +
                         "AND (c.fechaInicio < :fin AND c.fechaFin > :inicio)";
 
         Long count = em.createQuery(jpql, Long.class)
-                .setParameter("o", cita.getOdontologo())
+                .setParameter("odo", cita.getOdontologo())
                 .setParameter("id", cita.getId())
-                .setParameter("cancelada", Cita.EstadoCita.CANCELADA)
                 .setParameter("inicio", inicio)
                 .setParameter("fin", fin)
                 .getSingleResult();
@@ -149,139 +126,95 @@ public class CitaServicio {
         return count == 0;
     }
 
-    // =====================================================
-    // BUSCAR POR ID
-    // =====================================================
-    public Cita buscarPorId(Long id) {
-        EntityManager em = em();
-        try {
-            return em.find(Cita.class, id);
-        } finally {
-            em.close();
-        }
-    }
-
-
-    // =====================================================
-    // CANCELAR
-    // =====================================================
+    // ==========================================================
+    // CANCELAR CITA
+    // ==========================================================
     public void cancelar(Long citaId) {
-        EntityManager em = em();
-        EntityTransaction tx = em.getTransaction();
-
-        try {
-            tx.begin();
-
+        executeInTxVoid(em -> {
             Cita cita = em.find(Cita.class, citaId);
-            cita.setEstado(Cita.EstadoCita.CANCELADA);
+
+            EstadoCita cancelada = em.find(EstadoCita.class, "CANCELADA");
+            cita.setEstado(cancelada);
 
             em.merge(cita);
-            tx.commit();
-
-        } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
-            throw e;
-
-        } finally {
-            em.close();
-        }
+        });
     }
 
-    // =====================================================
-    // REPROGRAMAR
-    // =====================================================
+    // ==========================================================
+    // REPROGRAMAR CITA
+    // ==========================================================
     public void reprogramar(Long citaId, LocalDateTime nuevaFecha) {
 
-        EntityManager em = em();
-        EntityTransaction tx = em.getTransaction();
-
-        try {
-            tx.begin();
+        executeInTxVoid(em -> {
 
             Cita cita = em.find(Cita.class, citaId);
             Tratamiento t = cita.getTratamiento();
 
-            LocalDateTime nuevaFechaFin = nuevaFecha.plusMinutes(t.getDuracionMinutos());
+            LocalDateTime nuevaFin = nuevaFecha.plusMinutes(t.getDuracionMinutos());
 
-            if (!estaDisponibleInternal(em, cita.getOdontologo(), nuevaFecha, nuevaFechaFin)) {
+            if (!estaDisponibleInternal(em, cita.getOdontologo(), nuevaFecha, nuevaFin)) {
                 throw new RuntimeException("El odontólogo NO está disponible en la nueva fecha.");
             }
 
+            // Registrar historial
+            HistorialReprogramacion hist = new HistorialReprogramacion();
+            hist.setCita(cita);
+            hist.setFechaAnteriorInicio(cita.getFechaInicio());
+            hist.setFechaAnteriorFin(cita.getFechaFin());
+            hist.setFechaNuevaInicio(nuevaFecha);
+            hist.setFechaNuevaFin(nuevaFin);
+            hist.setMotivo("Reprogramación desde el sistema");
+
+            em.persist(hist);
+
+            // Actualizar cita
+            EstadoCita repro = em.find(EstadoCita.class, "REPROGRAMADA");
+            cita.setEstado(repro);
             cita.setFechaInicio(nuevaFecha);
-            cita.setFechaFin(nuevaFechaFin);
-            cita.setEstado(Cita.EstadoCita.REPROGRAMADA);
+            cita.setFechaFin(nuevaFin);
 
             em.merge(cita);
-            tx.commit();
-
-        } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
-            throw e;
-
-        } finally {
-            em.close();
-        }
+        });
     }
 
-    // =====================================================
-    // LISTAR TODAS
-    // =====================================================
+    // ==========================================================
+    // LISTADOS
+    // ==========================================================
+
     public List<Cita> listarTodas() {
-        EntityManager em = em();
-        try {
-            return em.createQuery("SELECT c FROM Cita c ORDER BY c.fechaInicio DESC", Cita.class)
-                    .getResultList();
-        } finally {
-            em.close();
-        }
+        return executeInTx(em ->
+                em.createQuery("SELECT c FROM Cita c ORDER BY c.fechaInicio DESC", Cita.class)
+                        .getResultList());
     }
 
-    // =====================================================
-    // LISTAR POR ODONTOLOGO
-    // =====================================================
     public List<Cita> listarPorOdontologo(Usuario odontologo) {
-        EntityManager em = em();
-        try {
-            return em.createQuery(
-                            "SELECT c FROM Cita c WHERE c.odontologo = :o ORDER BY c.fechaInicio DESC",
-                            Cita.class)
-                    .setParameter("o", odontologo)
-                    .getResultList();
-        } finally {
-            em.close();
-        }
+        return executeInTx(em ->
+                em.createQuery(
+                                "SELECT c FROM Cita c WHERE c.odontologo = :odo ORDER BY c.fechaInicio DESC",
+                                Cita.class)
+                        .setParameter("odo", odontologo)
+                        .getResultList()
+        );
     }
 
-    // =====================================================
-    // LISTAR POR PACIENTE
-    // =====================================================
     public List<Cita> listarPorPaciente(Paciente paciente) {
-        EntityManager em = em();
-        try {
-            return em.createQuery(
-                            "SELECT c FROM Cita c WHERE c.paciente = :p ORDER BY c.fechaInicio DESC",
-                            Cita.class)
-                    .setParameter("p", paciente)
-                    .getResultList();
-        } finally {
-            em.close();
-        }
+        return executeInTx(em ->
+                em.createQuery(
+                                "SELECT c FROM Cita c WHERE c.paciente = :p ORDER BY c.fechaInicio DESC",
+                                Cita.class)
+                        .setParameter("p", paciente)
+                        .getResultList()
+        );
     }
 
-    // =====================================================
-    // LISTAR POR RANGO
-    // =====================================================
     public List<Cita> listarPorRango(LocalDateTime inicio, LocalDateTime fin) {
-        EntityManager em = em();
-        try {
-            return em.createQuery(
-                            "SELECT c FROM Cita c WHERE c.fechaInicio BETWEEN :ini AND :fin ORDER BY c.fechaInicio ASC",
-                            Cita.class)
-                    .setParameter("ini", inicio)
-                    .setParameter("fin", fin)
-                    .getResultList();
-        } finally {
-            em.close();
-        }
+        return executeInTx(em ->
+                em.createQuery(
+                                "SELECT c FROM Cita c WHERE c.fechaInicio BETWEEN :ini AND :fin ORDER BY c.fechaInicio ASC",
+                                Cita.class)
+                        .setParameter("ini", inicio)
+                        .setParameter("fin", fin)
+                        .getResultList()
+        );
     }
 }

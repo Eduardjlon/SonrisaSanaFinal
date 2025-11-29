@@ -44,27 +44,43 @@ public class Paciente implements Serializable {
     @Column(name = "ultima_actualizacion")
     private LocalDateTime ultimaActualizacion;
 
-    // ==========================
+    // =====================================================
     // RELACIONES
-    // ==========================
+    // =====================================================
 
-    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "paciente", fetch = FetchType.LAZY)
     private List<Cita> citas;
 
-    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "paciente",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<ArchivoClinico> archivosClinicos;
 
-    // ==========================
-    // CONSTRUCTOR
-    // ==========================
+    // =====================================================
+    // CONSTRUCTORES
+    // =====================================================
 
-    public Paciente() {
+    public Paciente() {}
+
+    // =====================================================
+    // CALLBACKS
+    // =====================================================
+
+    @PrePersist
+    public void prePersist() {
         this.fechaCreacionExpediente = LocalDateTime.now();
+        this.ultimaActualizacion = LocalDateTime.now();
     }
 
-    // ==========================
+    @PreUpdate
+    public void preUpdate() {
+        this.ultimaActualizacion = LocalDateTime.now();
+    }
+
+    // =====================================================
     // GETTERS / SETTERS
-    // ==========================
+    // =====================================================
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

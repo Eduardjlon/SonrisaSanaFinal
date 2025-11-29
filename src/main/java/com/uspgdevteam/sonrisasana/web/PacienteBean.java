@@ -6,7 +6,7 @@ import com.uspgdevteam.sonrisasana.servicio.HistorialExpedienteServicio;
 import com.uspgdevteam.sonrisasana.servicio.PacienteServicio;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
+import jakarta.faces.view.ViewScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Named
-@SessionScoped
+@ViewScoped
 public class PacienteBean implements Serializable {
 
     @Inject
@@ -36,37 +36,40 @@ public class PacienteBean implements Serializable {
         cargarPacientes();
     }
 
+    // =====================================================
+    // CARGAR LISTA
+    // =====================================================
     private void cargarPacientes() {
         try {
-            pacientes = pacienteServicio.listar();
+            pacientes = pacienteServicio.listarOrdenados();
         } catch (Exception e) {
             pacientes = Collections.emptyList();
             mostrarError("Error", "No se pudieron cargar los pacientes.");
         }
     }
 
-    // ================================
+    // =====================================================
     // NUEVO
-    // ================================
+    // =====================================================
     public void nuevo() {
-        paciente = new Paciente(); // fechaCreacion se setea desde la entidad
+        paciente = new Paciente();
     }
 
-    // ================================
+    // =====================================================
     // EDITAR
-    // ================================
+    // =====================================================
     public void editar(Paciente p) {
-        this.paciente = pacienteServicio.buscarPorId(p.getId());
+        paciente = pacienteServicio.buscarPorId(p.getId());
     }
 
-    // ================================
+    // =====================================================
     // GUARDAR
-    // ================================
+    // =====================================================
     public void guardar() {
 
         boolean esNuevo = (paciente.getId() == null);
 
-        // VALIDACIÓN FECHA NACIMIENTO
+        // Validación fecha
         if (paciente.getFechaNacimiento() == null) {
             mostrarError("Fecha inválida", "Debe ingresar una fecha de nacimiento.");
             return;
@@ -77,40 +80,40 @@ public class PacienteBean implements Serializable {
             return;
         }
 
-        // GUARDAR PACIENTE
         try {
             pacienteServicio.save(paciente);
+
         } catch (RuntimeException ex) {
             mostrarError("Error al guardar", ex.getMessage());
             return;
         }
 
-        // GUARDAR HISTORIAL
-        String descripcion = esNuevo ?
-                "Se creó el expediente" :
-                "Se actualizó información del paciente";
-
+        // Registrar historial
         try {
+            String descripcion = esNuevo
+                    ? "Se creó el expediente"
+                    : "Se actualizó información del paciente";
+
             historialServicio.guardar(new HistorialExpediente(paciente, descripcion));
+
         } catch (Exception e) {
             mostrarError("Advertencia", "Paciente guardado, pero no se pudo registrar historial.");
         }
 
-        // Recargar tabla
         cargarPacientes();
-
-        // Limpia el formulario
         paciente = null;
 
         mostrarOk("Paciente guardado correctamente");
     }
 
-    // ================================
+    // =====================================================
     // ELIMINAR
-    // ================================
+    // =====================================================
     public void eliminar(Paciente p) {
         try {
             pacienteServicio.delete(p.getId());
+
+            filtroBusqueda = null; // 🔥 Importante: evitar búsquedas inválidas
             cargarPacientes();
 
             mostrarOk("Paciente eliminado");
@@ -120,9 +123,9 @@ public class PacienteBean implements Serializable {
         }
     }
 
-    // ================================
+    // =====================================================
     // BUSCAR
-    // ================================
+    // =====================================================
     public void buscar() {
         try {
             if (filtroBusqueda == null || filtroBusqueda.isBlank()) {
@@ -135,16 +138,9 @@ public class PacienteBean implements Serializable {
         }
     }
 
-    // ================================
-    // CANCELAR
-    // ================================
-    public void cancelar() {
-        paciente = null;
-    }
-
-    // ================================
+    // =====================================================
     // HISTORIAL
-    // ================================
+    // =====================================================
     public List<HistorialExpediente> obtenerHistorial(Paciente p) {
         try {
             return historialServicio.obtenerHistorial(p);
@@ -153,9 +149,9 @@ public class PacienteBean implements Serializable {
         }
     }
 
-    // ================================
+    // =====================================================
     // UTILIDADES
-    // ================================
+    // =====================================================
     private void mostrarError(String titulo, String detalle) {
         FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, titulo, detalle));
@@ -166,9 +162,9 @@ public class PacienteBean implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, mensaje, null));
     }
 
-    // ================================
+    // =====================================================
     // GETTERS / SETTERS
-    // ================================
+    // =====================================================
     public List<Paciente> getPacientes() { return pacientes; }
 
     public Paciente getPaciente() { return paciente; }

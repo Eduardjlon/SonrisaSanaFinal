@@ -4,71 +4,84 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "citas")
 public class Cita implements Serializable {
 
-    // ===========================================
-    // ENUM DEL ESTADO DE LA CITA
-    // ===========================================
-    public enum EstadoCita {
-        PENDIENTE,
-        CONFIRMADA,
-        CANCELADA,
-        REPROGRAMADA,
-        ATENDIDA
-    }
-
-    // ===========================================
-    // CAMPOS PRINCIPALES
-    // ===========================================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
+    // ===========================================
+    // RELACIONES
+    // ===========================================
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "odontologo_id", nullable = false)
     private Usuario odontologo;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tratamiento_id", nullable = false)
     private Tratamiento tratamiento;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado", referencedColumnName = "nombre")
+    private EstadoCita estado;
+
+    // ===========================================
+    // TIEMPOS
+    // ===========================================
+    @Column(name = "fecha_inicio", nullable = false)
     private LocalDateTime fechaInicio;
 
-    @Column(nullable = false)
+    @Column(name = "fecha_fin", nullable = false)
     private LocalDateTime fechaFin;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private EstadoCita estado = EstadoCita.CONFIRMADA;
 
     @Column(length = 500)
     private String notas;
 
     // ===========================================
-    // CAMPOS ECONÓMICOS
+    // COSTOS
     // ===========================================
-    @Column(name = "precio_base", nullable = false)
+    @Column(name = "precio_base", precision = 10, scale = 2, nullable = false)
     private BigDecimal precioBase = new BigDecimal("300.00");
 
-    @Column(name = "precio_tratamiento", nullable = false)
+    @Column(name = "precio_tratamiento", precision = 10, scale = 2, nullable = false)
     private BigDecimal precioTratamiento = BigDecimal.ZERO;
 
-    @Column(name = "total", nullable = false)
+    @Column(name = "total", precision = 10, scale = 2, nullable = false)
     private BigDecimal total = new BigDecimal("300.00");
 
     // ===========================================
-    // GETTERS Y SETTERS
+    // HISTORIAL DE REPROGRAMACIÓN
     // ===========================================
+    @OneToMany(mappedBy = "cita",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<HistorialReprogramacion> historial;
+
+    // ===========================================
+    // MÉTODOS DE INICIALIZACIÓN
+    // ===========================================
+    @PrePersist
+    public void prePersist() {
+        if (precioBase == null) precioBase = new BigDecimal("300.00");
+        if (precioTratamiento == null) precioTratamiento = BigDecimal.ZERO;
+        if (total == null) total = precioBase;
+    }
+
+    // ===========================================
+    // GETTERS / SETTERS
+    // ===========================================
+
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }  // ← recomendado para JPA
+    public void setId(Long id) { this.id = id; }
 
     public Paciente getPaciente() { return paciente; }
     public void setPaciente(Paciente paciente) { this.paciente = paciente; }
@@ -79,14 +92,14 @@ public class Cita implements Serializable {
     public Tratamiento getTratamiento() { return tratamiento; }
     public void setTratamiento(Tratamiento tratamiento) { this.tratamiento = tratamiento; }
 
+    public EstadoCita getEstado() { return estado; }
+    public void setEstado(EstadoCita estado) { this.estado = estado; }
+
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }
 
     public LocalDateTime getFechaFin() { return fechaFin; }
     public void setFechaFin(LocalDateTime fechaFin) { this.fechaFin = fechaFin; }
-
-    public EstadoCita getEstado() { return estado; }
-    public void setEstado(EstadoCita estado) { this.estado = estado; }
 
     public String getNotas() { return notas; }
     public void setNotas(String notas) { this.notas = notas; }
@@ -99,4 +112,7 @@ public class Cita implements Serializable {
 
     public BigDecimal getTotal() { return total; }
     public void setTotal(BigDecimal total) { this.total = total; }
+
+    public List<HistorialReprogramacion> getHistorial() { return historial; }
+    public void setHistorial(List<HistorialReprogramacion> historial) { this.historial = historial; }
 }

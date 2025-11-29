@@ -28,14 +28,23 @@ public class Usuario implements Serializable {
     @Column(nullable = false)
     private boolean activo = true;
 
+    // ===============================
+    // RELACIÓN ROL
+    // ===============================
     @ManyToOne(optional = false)
-    @JoinColumn(name = "rol_id")
+    @JoinColumn(name = "rol_id", nullable = false)
     private Rol rol;
+
+    // ===============================
+    // RELACIÓN ESPECIALIDAD (solo odontólogos)
+    // ===============================
+    @ManyToOne
+    @JoinColumn(name = "especialidad_id")
+    private Especialidad especialidad;
 
     // ===============================
     // HORARIO LABORAL (solo odontólogos)
     // ===============================
-
     @Column(name = "dia_inicio", length = 20)
     private String diaInicio;
 
@@ -49,15 +58,17 @@ public class Usuario implements Serializable {
     private LocalTime horaFin;
 
     // ===============================
-    // RELACIÓN CON CITAS
+    // CITAS COMO ODONTÓLOGO
     // ===============================
-
-    @OneToMany(mappedBy = "odontologo")
+    @OneToMany(mappedBy = "odontologo", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<Cita> citas;
 
     public Usuario() {}
 
-    // ======= GETTERS / SETTERS =======
+    // ===============================
+    // GETTERS / SETTERS
+    // ===============================
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -79,6 +90,9 @@ public class Usuario implements Serializable {
     public Rol getRol() { return rol; }
     public void setRol(Rol rol) { this.rol = rol; }
 
+    public Especialidad getEspecialidad() { return especialidad; }
+    public void setEspecialidad(Especialidad especialidad) { this.especialidad = especialidad; }
+
     public String getDiaInicio() { return diaInicio; }
     public void setDiaInicio(String diaInicio) { this.diaInicio = diaInicio; }
 
@@ -94,7 +108,9 @@ public class Usuario implements Serializable {
     public List<Cita> getCitas() { return citas; }
     public void setCitas(List<Cita> citas) { this.citas = citas; }
 
-    // ======= MÉTODOS DE ROL =======
+    // ===============================
+    // MÉTODOS DE ROL
+    // ===============================
     public boolean esAdministrador() {
         return rol != null && "ADMINISTRADOR".equalsIgnoreCase(rol.getNombre());
     }
@@ -107,6 +123,9 @@ public class Usuario implements Serializable {
         return rol != null && "RECEPCIONISTA".equalsIgnoreCase(rol.getNombre());
     }
 
+    // ===============================
+    // EQUALS / HASHCODE
+    // ===============================
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
