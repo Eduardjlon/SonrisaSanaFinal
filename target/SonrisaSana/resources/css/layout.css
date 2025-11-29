@@ -1,0 +1,128 @@
+
+body {
+    margin: 0;
+    background: #f5f7fa;
+    font-family: 'Urbanist', sans-serif;
+    color: #1f2937;
+}
+
+.p-m-3 {
+    padding: 20px;
+}
+
+
+.ui-menubar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05) !important;
+    padding: 6px 14px !important;
+    margin: 14px !important;
+}
+
+.ui-menuitem-link {
+    color: #1e3a8a !important;
+    font-weight: 600 !important;
+    padding: 10px 16px !important;
+    border-radius: 10px !important;
+    transition: background 0.25s, color 0.25s, transform .25s;
+    font-size: 14px;
+}
+
+.ui-menuitem-link .ui-menuitem-icon {
+    margin-right: 8px !important;
+    font-size: 14px !important;
+    color: #2563eb !important;
+}
+
+.ui-menuitem-link:hover {
+    background: #e8f0ff !important;
+    color: #1d4ed8 !important;
+    transform: translateY(-2px);
+}
+
+
+.ui-submenu .ui-menuitem-link {
+    color: #374151 !important;
+}
+
+.ui-submenu .ui-menuitem-link:hover {
+    background: #e8f0ff !important;
+    color: #1e40af !important;
+}
+
+
+.ui-menubar-root-list > .ui-menuitem > .ui-submenu-link {
+    font-size: 15px !important;
+    color: #1e3a8a !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    padding: 10px 16px !important;
+    transition: 0.2s;
+}
+
+.ui-menubar-root-list > .ui-menuitem > .ui-submenu-link:hover {
+    background: #e8f0ff !important;
+    color: #1d4ed8 !important;
+}
+
+
+.ui-submenu-link .ui-menuitem-icon {
+    margin-right: 8px !important;
+    color: #2563eb !important;
+}
+
+
+
+.ui-menubar .ui-menu-child {
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+    padding: 6px !important;
+}
+
+
+.ui-menu-child .ui-menuitem-link {
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+}
+
+
+.ui-menu-child .ui-menuitem-link:hover {
+    background: #eff6ff !important;
+    color: #2563eb !important;
+}
+
+
+.ui-menuitem-link[onclick*="logout"],
+.ui-menuitem-link .pi-sign-out {
+    color: #dc2626 !important;
+}
+
+.ui-menuitem-link:hover .pi-sign-out {
+    color: #b91c1c !important;
+}
+
+.ui-menuitem-link:hover[onclick*="logout"] {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+
+@media (max-width: 768px) {
+    .ui-menubar {
+        padding: 10px !important;
+    }
+
+    .ui-menuitem-link {
+        padding: 8px 10px !important;
+        font-size: 13px !important;
+    }
+
+    .ui-menubar-root-list > .ui-menuitem > .ui-submenu-link {
+        padding: 8px 10px !important;
+        font-size: 14px !important;
+    }
+}

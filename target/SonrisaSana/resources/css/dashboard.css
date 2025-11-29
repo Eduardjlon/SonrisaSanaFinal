@@ -1,0 +1,98 @@
+
+body {
+    font-family: 'Urbanist', sans-serif;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: #1e3a8a;
+}
+
+.card-metric {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    text-align: center;
+    transition: 0.25s ease;
+}
+
+.card-metric:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+}
+
+.card-metric .ui-card-title,
+.ui-card .ui-card-title {
+    font-size: 16px !important;
+    color: #2563eb !important;
+    font-weight: 700 !important;
+}
+
+
+.card-metric h2 {
+    font-size: 34px;
+    font-weight: 800;
+    margin: 8px 0 0 0;
+    color: #1f2937;
+}
+
+.ui-card {
+    border-radius: 18px !important;
+    padding: 20px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
+    transition: 0.25s;
+}
+
+.ui-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.07) !important;
+}
+
+.ui-card .ui-card-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    margin-bottom: 10px !important;
+    color: #1e3a8a !important;
+}
+
+.p-chart {
+    padding: 10px !important;
+}
+
+.p-chart canvas {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+
+.dashboard-cards {
+    margin-top: 20px;
+}
+
+.p-grid {
+    margin-top: 10px;
+}
+
+
+.p-mt-3 {
+    margin-top: 28px !important;
+}
+
+.p-mt-4 {
+    margin-top: 40px !important;
+}
+
+
+canvas {
+    padding: 10px !important;
+}
+
+p {
+    color: #475569;
+}

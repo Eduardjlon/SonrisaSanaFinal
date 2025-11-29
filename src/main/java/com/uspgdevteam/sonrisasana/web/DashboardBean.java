@@ -64,15 +64,17 @@ public class DashboardBean implements Serializable {
 
             citasHoy = citasHoyList.size();
 
+            // ==========================
             // CANCELADAS HOY
+            // ==========================
             citasCanceladasHoy = citasHoyList.stream()
                     .filter(c -> c != null &&
                             c.getEstado() != null &&
-                            "CANCELADA".equalsIgnoreCase(c.getEstado().getNombre()))
+                            "CANCELADA".equalsIgnoreCase(c.getEstado()))
                     .count();
 
             // ==========================
-            // INGRESOS DEL MES REAL
+            // INGRESOS DEL MES
             // ==========================
             LocalDateTime inicioMes = hoy.withDayOfMonth(1).atStartOfDay();
             LocalDateTime finMes = hoy.plusMonths(1).withDayOfMonth(1).atStartOfDay().minusSeconds(1);
@@ -101,7 +103,6 @@ public class DashboardBean implements Serializable {
 
         } catch (Exception e) {
             e.printStackTrace();
-
             pacientesSemana = 0;
             citasHoy = 0;
             citasCanceladasHoy = 0;

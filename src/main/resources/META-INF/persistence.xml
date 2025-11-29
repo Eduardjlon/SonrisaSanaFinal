@@ -19,6 +19,11 @@
         <class>com.uspgdevteam.sonrisasana.entidad.HistorialReprogramacion</class>
         <class>com.uspgdevteam.sonrisasana.entidad.EstadoCita</class>
         <class>com.uspgdevteam.sonrisasana.entidad.Especialidad</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.Cupon</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.Seguro</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.Pago</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.EstadoFactura</class>
+        <class>com.uspgdevteam.sonrisasana.entidad.TipoArchivoClinico</class>
 
 
 

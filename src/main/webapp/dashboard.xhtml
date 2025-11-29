@@ -51,5 +51,218 @@
         </div>
 
         <p:spacer height="30"/>
+
+        <!-- GRÁFICAS -->
+        <h2 class="p-mt-4">Gráficas y Métricas</h2>
+
+        <div class="p-grid p-mt-3">
+            <!-- Evolución Semanal de Citas -->
+            <div class="p-col-12 p-md-6">
+                <p:card>
+                    <f:facet name="title">Evolución Semanal de Citas</f:facet>
+                    <canvas id="evolucionCitasChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+
+            <!-- Tratamientos Más Frecuentes -->
+            <div class="p-col-12 p-md-6">
+                <p:card>
+                    <f:facet name="title">Tratamientos Más Frecuentes (Este Mes)</f:facet>
+                    <canvas id="tratamientosChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+
+            <!-- Ingresos Mensuales -->
+            <div class="p-col-12">
+                <p:card>
+                    <f:facet name="title">Ingresos Mensuales por Tipo de Pago</f:facet>
+                    <canvas id="ingresosChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+
+            <!-- Actividad por Odontólogo -->
+            <div class="p-col-12 p-md-6">
+                <p:card>
+                    <f:facet name="title">Actividad por Odontólogo (Este Mes)</f:facet>
+                    <canvas id="actividadOdontologosChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+
+            <!-- Pacientes Nuevos por Mes -->
+            <div class="p-col-12 p-md-6">
+                <p:card>
+                    <f:facet name="title">Pacientes Nuevos por Mes</f:facet>
+                    <canvas id="pacientesNuevosChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+
+            <!-- Reprogramaciones por Causa -->
+            <div class="p-col-12">
+                <p:card>
+                    <f:facet name="title">Reprogramaciones por Causa</f:facet>
+                    <canvas id="reprogramacionesChart" style="max-height: 300px;"></canvas>
+                </p:card>
+            </div>
+        </div>
+
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script>
+            // Datos desde el bean
+            var evolucionCitasData = !{dashboardBean.evolucionCitasJson};
+            var ingresosData = !{dashboardBean.ingresosMensualesJson};
+            var tratamientosData = !{dashboardBean.tratamientosFrecuentesJson};
+            var actividadData = !{dashboardBean.actividadOdontologosJson};
+            var pacientesData = !{dashboardBean.pacientesNuevosJson};
+            var reprogramacionesData = !{dashboardBean.reprogramacionesJson};
+
+            // 1. Evolución Semanal de Citas
+            if (evolucionCitasData) {
+                new Chart(document.getElementById('evolucionCitasChart'), {
+                    type: 'line',
+                    data: {
+                        labels: evolucionCitasData.labels,
+                        datasets: [{
+                            label: 'Atendidas',
+                            data: evolucionCitasData.atendidas,
+                            borderColor: 'rgb(34, 197, 94)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                            tension: 0.4
+                        }, {
+                            label: 'Canceladas',
+                            data: evolucionCitasData.canceladas,
+                            borderColor: 'rgb(239, 68, 68)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            tension: 0.4
+                        }, {
+                            label: 'Reprogramadas',
+                            data: evolucionCitasData.reprogramadas,
+                            borderColor: 'rgb(251, 191, 36)',
+                            backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 2. Tratamientos Más Frecuentes
+            if (tratamientosData) {
+                new Chart(document.getElementById('tratamientosChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: tratamientosData.labels,
+                        datasets: [{
+                            data: tratamientosData.data,
+                            backgroundColor: [
+                                'rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(251, 191, 36)',
+                                'rgb(239, 68, 68)', 'rgb(168, 85, 247)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 3. Ingresos Mensuales
+            if (ingresosData) {
+                new Chart(document.getElementById('ingresosChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ingresosData.labels,
+                        datasets: [{
+                            label: 'Efectivo',
+                            data: ingresosData.efectivo,
+                            backgroundColor: 'rgba(34, 197, 94, 0.5)'
+                        }, {
+                            label: 'Tarjeta',
+                            data: ingresosData.tarjeta,
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)'
+                        }, {
+                            label: 'Seguro',
+                            data: ingresosData.seguro,
+                            backgroundColor: 'rgba(251, 191, 36, 0.5)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { stacked: true },
+                            y: { stacked: true }
+                        }
+                    }
+                });
+            }
+
+            // 4. Actividad por Odontólogo
+            if (actividadData) {
+                new Chart(document.getElementById('actividadOdontologosChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: actividadData.labels,
+                        datasets: [{
+                            label: 'Pacientes Atendidos',
+                            data: actividadData.data,
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)'
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 5. Pacientes Nuevos por Mes
+            if (pacientesData) {
+                new Chart(document.getElementById('pacientesNuevosChart'), {
+                    type: 'line',
+                    data: {
+                        labels: pacientesData.labels,
+                        datasets: [{
+                            label: 'Pacientes Nuevos',
+                            data: pacientesData.data,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 6. Reprogramaciones por Causa
+            if (reprogramacionesData) {
+                new Chart(document.getElementById('reprogramacionesChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: reprogramacionesData.labels,
+                        datasets: [{
+                            data: reprogramacionesData.data,
+                            backgroundColor: [
+                                'rgb(239, 68, 68)', 'rgb(251, 191, 36)',
+                                'rgb(59, 130, 246)', 'rgb(168, 85, 247)'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        </script>
     </ui:define>
 </ui:composition>

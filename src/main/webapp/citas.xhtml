@@ -14,7 +14,7 @@
             <p:growl id="msgs" showDetail="true" showSummary="true" globalOnly="true"/>
         </h:form>
 
-        <!-- ======================= AGENDA ========================= -->
+        <!-- CALENDARIO -->
         <h:form id="frmAgenda">
 
             <p:schedule id="agenda"
@@ -45,57 +45,48 @@
 
         </h:form>
 
-        <!-- ======================= DIALOGO CITA ========================= -->
-
+        <!-- DIALOGO DE CITA -->
         <p:dialog id="dlgCita"
                   header="Detalle de Cita"
                   widgetVar="dlgCita"
                   modal="true"
                   resizable="false"
                   draggable="true"
-                  width="480"
-                  style="max-height: 85vh; overflow-y: auto;"
+                  width="500"
+                  dynamic="true"
                   styleClass="dialog-elegante">
 
             <h:form id="frmCita" style="padding:10px">
 
-                <p:panelGrid columns="1" styleClass="form-grid" columnClasses="label,value"
-                             layout="grid" style="width:100%">
+                <p:panelGrid columns="1" layout="grid" style="width:100%">
 
                     <!-- PACIENTE -->
                     <p:outputLabel value="Paciente"/>
-                    <p:selectOneMenu value="#{citaBean.cita.paciente}"
-                                     style="width:100%">
+                    <p:selectOneMenu value="#{citaBean.pacienteId}" style="width:100%">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.pacientes}" var="p"
                                        itemLabel="#{p.nombreCompleto}"
-                                       itemValue="#{p}"/>
+                                       itemValue="#{p.id}"/>
                     </p:selectOneMenu>
 
-                    <!-- ODONTÓLOGO (solo se muestra, sin usarlo para filtrar) -->
+                    <!-- ODONTÓLOGO -->
                     <p:outputLabel value="Odontólogo" style="margin-top:10px"/>
-                    <p:selectOneMenu id="odontologo"
-                                     value="#{citaBean.cita.odontologo}"
-                                     style="width:100%">
+                    <p:selectOneMenu value="#{citaBean.odontologoId}" style="width:100%">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.odontologos}" var="o"
                                        itemLabel="#{o.nombreCompleto}"
-                                       itemValue="#{o}"/>
+                                       itemValue="#{o.id}"/>
                     </p:selectOneMenu>
 
-                    <!-- TRATAMIENTO: SIEMPRE MUESTRA TODOS -->
+                    <!-- TRATAMIENTO -->
                     <p:outputLabel value="Tratamiento" style="margin-top:10px"/>
-                    <p:selectOneMenu id="tratamiento"
-                                     value="#{citaBean.cita.tratamiento}"
-                                     style="width:100%">
+                    <p:selectOneMenu value="#{citaBean.tratamientoId}" style="width:100%">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
-                        <f:selectItems value="#{citaBean.tratamientos}"
-                                       var="t"
+                        <f:selectItems value="#{citaBean.tratamientos}" var="t"
                                        itemLabel="#{t.nombre} (Q #{t.costo})"
-                                       itemValue="#{t}"/>
+                                       itemValue="#{t.id}"/>
 
                         <p:ajax event="change"
-                                process="@this"
                                 listener="#{citaBean.actualizarPrecios}"
                                 update="precioBase precioTratamiento total"/>
                     </p:selectOneMenu>
@@ -110,16 +101,15 @@
                     <!-- NOTAS -->
                     <p:outputLabel value="Notas" style="margin-top:10px"/>
                     <p:inputTextarea value="#{citaBean.cita.notas}"
-                                     autoResize="true"
                                      rows="3"
+                                     autoResize="true"
                                      style="width:100%"/>
 
-                    <!-- SECCION DE PRECIOS -->
+                    <!-- PRECIOS -->
                     <p:separator style="margin:10px 0"/>
                     <h3>Precios</h3>
 
-                    <h:panelGrid columns="2" columnClasses="label,value"
-                                 style="width:100%; margin-top:10px">
+                    <h:panelGrid columns="2" style="width:100%">
 
                         <h:outputText value="Precio base:"/>
                         <p:inputText id="precioBase"
@@ -140,7 +130,6 @@
 
                 </p:panelGrid>
 
-
                 <!-- BOTONES -->
                 <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:15px;">
 
@@ -149,7 +138,7 @@
                                      update=":global:msgs :frmAgenda:agenda"
                                      process="@form"
                                      styleClass="p-button-success"
-                                     oncomplete="if (!args.validationFailed) PF('dlgCita').hide();"/>
+                                     oncomplete="PF('dlgCita').hide();"/>
 
                     <p:commandButton value="Cancelar"
                                      type="button"
@@ -160,37 +149,6 @@
             </h:form>
 
         </p:dialog>
-
-        <!-- ======================= ESTILOS ========================= -->
-        <style>
-            .dialog-elegante .ui-dialog-titlebar {
-                background: #2563eb !important;
-                color: white !important;
-                font-weight: bold;
-                border-radius: 6px 6px 0 0;
-            }
-
-            .dialog-elegante .ui-dialog-content {
-                border-radius: 0 0 6px 6px;
-            }
-
-            .form-grid .ui-outputlabel {
-                font-weight: bold;
-                margin-bottom: 3px;
-            }
-
-            #agenda {
-                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-                border-radius: 12px;
-                overflow: hidden;
-                animation: fadeIn 0.4s ease;
-            }
-
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(5px);}
-                to { opacity: 1; transform: translateY(0);}
-            }
-        </style>
 
     </ui:define>
 </ui:composition>

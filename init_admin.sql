@@ -116,22 +116,27 @@ CREATE TABLE IF NOT EXISTS tratamientos (
 -- =========================================
 -- 7. CITAS
 -- =========================================
-CREATE TABLE IF NOT EXISTS citas (
-                                     id SERIAL PRIMARY KEY,
-                                     paciente_id INT NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
-    odontologo_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    tratamiento_id INT NOT NULL REFERENCES tratamientos(id) ON DELETE CASCADE,
+DROP TABLE IF EXISTS citas CASCADE;
 
-    fecha_inicio TIMESTAMP NOT NULL,
-    fecha_fin TIMESTAMP NOT NULL,
+CREATE TABLE citas (
+                       id SERIAL PRIMARY KEY,
 
-    estado VARCHAR(30) REFERENCES estado_cita(nombre),
-    notas VARCHAR(500),
+                       estado VARCHAR(30),
 
-    precio_base NUMERIC(10,2) NOT NULL DEFAULT 300.00,
-    precio_tratamiento NUMERIC(10,2) NOT NULL DEFAULT 0.00,
-    total NUMERIC(10,2) NOT NULL DEFAULT 300.00
-    );
+                       fecha_fin TIMESTAMP NOT NULL,
+                       fecha_inicio TIMESTAMP NOT NULL,
+
+                       notas VARCHAR(500),
+
+                       odontologo_id INT NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+                       paciente_id INT NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
+
+                       precio_base NUMERIC(10,2) NOT NULL DEFAULT 300.00,
+                       precio_tratamiento NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+                       total NUMERIC(10,2) NOT NULL DEFAULT 300.00,
+
+                       tratamiento_id INT NOT NULL REFERENCES tratamientos(id) ON DELETE CASCADE
+);
 
 -- =========================================
 -- 8. HISTORIAL DE REPROGRAMACIONES
@@ -201,19 +206,36 @@ INSERT INTO seguros (nombre) VALUES
     ON CONFLICT (nombre) DO NOTHING;
 
 -- =========================================
--- 13. FACTURAS
+-- 13. ESTADO FACTURA
+-- =========================================
+CREATE TABLE IF NOT EXISTS estado_factura (
+                                              id SERIAL PRIMARY KEY,
+                                              nombre VARCHAR(30) UNIQUE NOT NULL,
+    descripcion VARCHAR(200)
+    );
+
+INSERT INTO estado_factura (nombre, descripcion) VALUES
+                                                     ('PENDIENTE', 'Factura pendiente de pago'),
+                                                     ('PARCIALMENTE_PAGADO', 'Factura con pago parcial'),
+                                                     ('PAGADO', 'Factura completamente pagada'),
+                                                     ('ANULADO', 'Factura anulada')
+    ON CONFLICT (nombre) DO NOTHING;
+
+-- =========================================
+-- 14. FACTURAS
 -- =========================================
 CREATE TABLE IF NOT EXISTS facturas (
                                         id SERIAL PRIMARY KEY,
-                                        paciente_id INT REFERENCES pacientes(id) ON DELETE CASCADE,
+                                        numero VARCHAR(30) UNIQUE NOT NULL,
+    paciente_id INT NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,
     cita_id INT REFERENCES citas(id) ON DELETE SET NULL,
 
     subtotal NUMERIC(10,2) NOT NULL,
     descuento NUMERIC(10,2) DEFAULT 0,
-    seguro_cubre NUMERIC(10,2) DEFAULT 0,
+    cobertura_seguro NUMERIC(10,2) DEFAULT 0,
     total NUMERIC(10,2) NOT NULL,
 
-    estado VARCHAR(30) DEFAULT 'PENDIENTE',
+    estado VARCHAR(30) REFERENCES estado_factura(nombre) DEFAULT 'PENDIENTE',
     fecha_emision TIMESTAMP DEFAULT NOW(),
 
     cupon_id INT REFERENCES cupones(id),
@@ -221,12 +243,13 @@ CREATE TABLE IF NOT EXISTS facturas (
     );
 
 -- =========================================
--- 14. PAGOS PARCIALES
+-- 15. PAGOS PARCIALES
 -- =========================================
 CREATE TABLE IF NOT EXISTS pagos (
                                      id SERIAL PRIMARY KEY,
-                                     factura_id INT REFERENCES facturas(id) ON DELETE CASCADE,
+                                     factura_id INT NOT NULL REFERENCES facturas(id) ON DELETE CASCADE,
     monto NUMERIC(10,2) NOT NULL,
     metodo VARCHAR(50),
+    observaciones VARCHAR(500),
     fecha TIMESTAMP DEFAULT NOW()
     );

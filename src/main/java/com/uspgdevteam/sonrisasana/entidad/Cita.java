@@ -15,27 +15,27 @@ public class Cita implements Serializable {
     private Long id;
 
     // ===========================================
-    // RELACIONES
+    // RELACIONES (EAGER PARA EVITAR ERRORES LAZY)
     // ===========================================
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "odontologo_id", nullable = false)
     private Usuario odontologo;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "tratamiento_id", nullable = false)
     private Tratamiento tratamiento;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "estado", referencedColumnName = "nombre")
-    private EstadoCita estado;
+    // AHORA "estado" es un VARCHAR normal (no entidad)
+    @Column(name = "estado", length = 30, nullable = false)
+    private String estado;
 
     // ===========================================
-    // TIEMPOS
+    // FECHAS
     // ===========================================
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDateTime fechaInicio;
@@ -59,18 +59,17 @@ public class Cita implements Serializable {
     private BigDecimal total = new BigDecimal("300.00");
 
     // ===========================================
-    // HISTORIAL DE REPROGRAMACIÓN
+    // HISTORIAL
     // ===========================================
-    @OneToMany(mappedBy = "cita",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "cita", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HistorialReprogramacion> historial;
 
     // ===========================================
-    // MÉTODOS DE INICIALIZACIÓN
+    // PRE-PERSIST
     // ===========================================
     @PrePersist
     public void prePersist() {
+        if (estado == null) estado = "CONFIRMADA";
         if (precioBase == null) precioBase = new BigDecimal("300.00");
         if (precioTratamiento == null) precioTratamiento = BigDecimal.ZERO;
         if (total == null) total = precioBase;
@@ -92,8 +91,8 @@ public class Cita implements Serializable {
     public Tratamiento getTratamiento() { return tratamiento; }
     public void setTratamiento(Tratamiento tratamiento) { this.tratamiento = tratamiento; }
 
-    public EstadoCita getEstado() { return estado; }
-    public void setEstado(EstadoCita estado) { this.estado = estado; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
     public LocalDateTime getFechaInicio() { return fechaInicio; }
     public void setFechaInicio(LocalDateTime fechaInicio) { this.fechaInicio = fechaInicio; }
