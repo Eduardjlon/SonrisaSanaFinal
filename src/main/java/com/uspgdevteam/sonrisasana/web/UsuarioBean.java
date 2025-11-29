@@ -60,7 +60,7 @@ public class UsuarioBean implements Serializable {
     // ===================================================
     public void nuevo() {
         seleccionado = new Usuario();
-        seleccionado.setActivo(true);
+        seleccionado.setActivo(true);          // por defecto activo
     }
 
     // ===================================================
@@ -68,11 +68,16 @@ public class UsuarioBean implements Serializable {
     // ===================================================
     public void editar(Usuario u) {
         seleccionado = usuarioServicio.findById(u.getId());
+        if (seleccionado == null) {
+            mensajeError("No se encontró el usuario a editar");
+            return;
+        }
+
         if (seleccionado.esOdontologo()) {
             if (seleccionado.getDiaInicio() == null) seleccionado.setDiaInicio("LUNES");
-            if (seleccionado.getDiaFin() == null) seleccionado.setDiaFin("VIERNES");
+            if (seleccionado.getDiaFin() == null)    seleccionado.setDiaFin("VIERNES");
             if (seleccionado.getHoraInicio() == null) seleccionado.setHoraInicio(LocalTime.of(9,0));
-            if (seleccionado.getHoraFin() == null) seleccionado.setHoraFin(LocalTime.of(13,0));
+            if (seleccionado.getHoraFin() == null)    seleccionado.setHoraFin(LocalTime.of(13,0));
         }
     }
 
@@ -81,21 +86,30 @@ public class UsuarioBean implements Serializable {
     // ===================================================
     public void guardar() {
 
+        if (seleccionado == null) {
+            mensajeError("No hay usuario seleccionado");
+            return;
+        }
+
+        // Validar rol
         if (seleccionado.getRol() == null) {
             mensajeError("Debe seleccionar un rol para el usuario");
             return;
         }
 
+        // Validar email único
         if (usuarioServicio.emailExiste(seleccionado.getEmail(), seleccionado.getId())) {
             mensajeError("El correo ya está registrado en otro usuario");
             return;
         }
 
+        // Validar username único
         if (usuarioServicio.usernameExiste(seleccionado.getUsername(), seleccionado.getId())) {
             mensajeError("El nombre de usuario ya está registrado");
             return;
         }
 
+        // Validaciones específicas para odontólogo
         if (seleccionado.esOdontologo()) {
             if (seleccionado.getDiaInicio() == null || seleccionado.getDiaFin() == null ||
                     seleccionado.getHoraInicio() == null || seleccionado.getHoraFin() == null) {
@@ -111,6 +125,7 @@ public class UsuarioBean implements Serializable {
                 return;
             }
         } else {
+            // Si no es odontólogo, limpiar campos de odontólogo
             seleccionado.setDiaInicio(null);
             seleccionado.setDiaFin(null);
             seleccionado.setHoraInicio(null);
@@ -119,13 +134,18 @@ public class UsuarioBean implements Serializable {
         }
 
         try {
-            if (seleccionado.getId() == null && (seleccionado.getPasswordHash() == null || seleccionado.getPasswordHash().isEmpty())) {
+            // Si es nuevo y no se ingresó password (por si en algún flujo viene vacío)
+            if (seleccionado.getId() == null &&
+                    (seleccionado.getPasswordHash() == null || seleccionado.getPasswordHash().isEmpty())) {
                 seleccionado.setPasswordHash("123456");
             }
 
             usuarioServicio.save(seleccionado);
+
+            // Recargar lista (solo usuarios activos)
             usuarios = usuarioServicio.listar();
             seleccionado = null;
+
             mensajeInfo("Usuario guardado correctamente");
 
         } catch (Exception e) {
@@ -134,13 +154,20 @@ public class UsuarioBean implements Serializable {
     }
 
     // ===================================================
-    // ELIMINAR USUARIO
+    // ELIMINAR USUARIO (BORRADO LÓGICO)
     // ===================================================
     public void eliminar(Usuario u) {
         try {
-            usuarioServicio.delete(u.getId());
-            usuarios = usuarioServicio.listar();
-            mensajeInfo("Usuario eliminado correctamente");
+            if (u == null || u.getId() == null) {
+                mensajeError("Usuario inválido");
+                return;
+            }
+
+            usuarioServicio.desactivar(u);  // 🔹 nuevo método de servicio: setActivo(false)
+
+            usuarios = usuarioServicio.listar(); // solo activos
+            mensajeInfo("Usuario desactivado correctamente");
+
         } catch (Exception e) {
             mensajeError("No se pudo eliminar el usuario. ¿Tiene citas registradas?");
         }
@@ -150,6 +177,10 @@ public class UsuarioBean implements Serializable {
     // CAMBIAR CONTRASEÑA
     // ===================================================
     public void prepararCambioPassword(Usuario u) {
+        if (u == null || u.getId() == null) {
+            mensajeError("Usuario inválido para cambio de contraseña");
+            return;
+        }
         usuarioIdParaPassword = u.getId();
         passwordActual = "";
         passwordNueva = "";
@@ -157,10 +188,24 @@ public class UsuarioBean implements Serializable {
     }
 
     public void cambiarPassword() {
+        if (usuarioIdParaPassword == null) {
+            mensajeError("No se ha seleccionado un usuario");
+            return;
+        }
+
         Usuario u = usuarioServicio.findById(usuarioIdParaPassword);
+        if (u == null) {
+            mensajeError("Usuario no encontrado");
+            return;
+        }
 
         if (!u.getPasswordHash().equals(passwordActual)) {
             mensajeError("La contraseña actual es incorrecta");
+            return;
+        }
+
+        if (passwordNueva == null || passwordNueva.isBlank()) {
+            mensajeError("La nueva contraseña no puede estar vacía");
             return;
         }
 
@@ -191,15 +236,22 @@ public class UsuarioBean implements Serializable {
     // GETTERS / SETTERS
     // ===================================================
     public List<String> getDiasSemana() { return diasSemana; }
+
     public List<Usuario> getUsuarios() { return usuarios; }
+
     public Usuario getSeleccionado() { return seleccionado; }
     public void setSeleccionado(Usuario seleccionado) { this.seleccionado = seleccionado; }
+
     public List<Rol> getRoles() { return roles; }
+
     public List<Especialidad> getEspecialidades() { return especialidades; }
+
     public String getPasswordActual() { return passwordActual; }
     public void setPasswordActual(String passwordActual) { this.passwordActual = passwordActual; }
+
     public String getPasswordNueva() { return passwordNueva; }
     public void setPasswordNueva(String passwordNueva) { this.passwordNueva = passwordNueva; }
+
     public String getPasswordConfirmacion() { return passwordConfirmacion; }
     public void setPasswordConfirmacion(String passwordConfirmacion) { this.passwordConfirmacion = passwordConfirmacion; }
 }

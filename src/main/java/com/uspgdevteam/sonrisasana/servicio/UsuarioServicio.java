@@ -24,7 +24,11 @@ public class UsuarioServicio extends GenericService<Usuario> {
     // ============================================================
 
     public List<Usuario> listar() {
-        return findAll();
+        // 🔹 Solo usuarios activos
+        return executeInTx(em -> em.createQuery(
+                        "SELECT u FROM Usuario u WHERE u.activo = true",
+                        Usuario.class)
+                .getResultList());
     }
 
     public Usuario buscarPorUsername(String username) {
@@ -166,6 +170,7 @@ public class UsuarioServicio extends GenericService<Usuario> {
             if (u.getPasswordHash() == null || u.getPasswordHash().isEmpty()) {
                 u.setPasswordHash("123456");
             }
+            u.setActivo(true); // por si acaso
             return executeInTx(em -> {
                 em.persist(u);
                 em.flush();
@@ -178,7 +183,7 @@ public class UsuarioServicio extends GenericService<Usuario> {
     }
 
     // ============================================================
-    // ELIMINAR USUARIO
+    // ELIMINAR USUARIO FÍSICO (no usado en el bean)
     // ============================================================
 
     @Override
@@ -189,4 +194,16 @@ public class UsuarioServicio extends GenericService<Usuario> {
         });
     }
 
+    // ============================================================
+    // DESACTIVAR USUARIO (BORRADO LÓGICO)
+    // ============================================================
+
+    public void desactivar(Usuario u) {
+        executeInTxVoid(em -> {
+            Usuario managed = em.find(Usuario.class, u.getId());
+            if (managed != null) {
+                managed.setActivo(false);
+            }
+        });
+    }
 }

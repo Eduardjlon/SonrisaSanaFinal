@@ -14,9 +14,18 @@
 
         <h2>Gestión de Usuarios</h2>
 
+        <!-- GROWL GLOBAL -->
         <h:form id="global">
             <p:growl id="msgs" showDetail="true" showSummary="true"/>
         </h:form>
+
+        <!-- CONFIRM GLOBAL -->
+        <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+            <p:commandButton value="Sí" type="button"
+                             styleClass="ui-confirmdialog-yes p-button-danger"/>
+            <p:commandButton value="No" type="button"
+                             styleClass="ui-confirmdialog-no p-button-secondary"/>
+        </p:confirmDialog>
 
         <!-- FORM PRINCIPAL -->
         <h:form id="frmUsuarios">
@@ -29,11 +38,11 @@
                                  oncomplete="PF('dlgUsuario').show()"/>
             </div>
 
-            <!-- TABLA -->
+            <!-- TABLA DE USUARIOS -->
             <p:dataTable id="tablaUsuarios"
-                         value="#{usuarioBean.usuarios}"
-                         var="u"
+                         value="#{usuarioBean.usuarios}" var="u"
                          paginator="true" rows="10"
+                         paginatorPosition="bottom"
                          responsiveLayout="scroll">
 
                 <p:column headerText="Nombre">#{u.nombreCompleto}</p:column>
@@ -46,12 +55,14 @@
 
                 <p:column headerText="Acciones">
 
+                    <!-- EDITAR -->
                     <p:commandButton icon="pi pi-pencil"
                                      title="Editar"
                                      action="#{usuarioBean.editar(u)}"
                                      update="dlgUsuario"
                                      oncomplete="PF('dlgUsuario').show()"/>
 
+                    <!-- CAMBIAR CONTRASEÑA -->
                     <p:commandButton icon="pi pi-key"
                                      title="Cambiar contraseña"
                                      action="#{usuarioBean.prepararCambioPassword(u)}"
@@ -59,6 +70,7 @@
                                      oncomplete="PF('dlgPassword').show()"
                                      styleClass="p-button-warning p-ml-2"/>
 
+                    <!-- ELIMINAR -->
                     <p:commandButton icon="pi pi-trash"
                                      title="Eliminar"
                                      action="#{usuarioBean.eliminar(u)}"
@@ -70,26 +82,37 @@
                     </p:commandButton>
 
                 </p:column>
+
             </p:dataTable>
 
         </h:form>
 
         <!-- DIALOGO USUARIO -->
-        <p:dialog id="dlgUsuario" widgetVar="dlgUsuario" modal="true" width="520" appendTo="@(body)">
-
+        <p:dialog id="dlgUsuario" widgetVar="dlgUsuario"
+                  modal="true" width="520" appendTo="@(body)">
             <h:form id="frmDialogoUsuario">
 
                 <h:panelGrid columns="2" columnClasses="label,value" styleClass="p-fluid">
 
                     <h:outputLabel value="Nombre completo"/>
-                    <p:inputText value="#{usuarioBean.seleccionado.nombreCompleto}" required="true"/>
+                    <p:inputText value="#{usuarioBean.seleccionado.nombreCompleto}"
+                                 required="true"/>
 
                     <h:outputLabel value="Usuario"/>
-                    <p:inputText value="#{usuarioBean.seleccionado.username}" required="true"/>
+                    <p:inputText value="#{usuarioBean.seleccionado.username}"
+                                 required="true"/>
 
                     <h:outputLabel value="Correo"/>
-                    <p:inputText value="#{usuarioBean.seleccionado.email}" required="true"/>
+                    <p:inputText value="#{usuarioBean.seleccionado.email}"
+                                 required="true"/>
 
+                    <!-- Contraseña -->
+                    <h:outputLabel value="Contraseña"/>
+                    <p:password value="#{usuarioBean.seleccionado.passwordHash}"
+                                feedback="true" required="true"
+                                placeholder="Contraseña inicial"/>
+
+                    <!-- ROL -->
                     <h:outputLabel value="Rol"/>
                     <p:selectOneMenu value="#{usuarioBean.seleccionado.rol}"
                                      converter="omnifaces.SelectItemsConverter">
@@ -98,7 +121,7 @@
                         <p:ajax update="especialidadRow horarioRow"/>
                     </p:selectOneMenu>
 
-                    <!-- Especialidad solo para odontólogo -->
+                    <!-- Especialidad SOLO odontólogo -->
                     <h:panelGroup id="especialidadRow" layout="block"
                                   rendered="#{usuarioBean.seleccionado.esOdontologo()}">
 
@@ -111,13 +134,12 @@
 
                     </h:panelGroup>
 
-                    <!-- Horario laboral solo odontólogo -->
+                    <!-- Horarios SOLO odontólogo -->
                     <h:panelGroup id="horarioRow" layout="block"
                                   rendered="#{usuarioBean.seleccionado.esOdontologo()}">
 
                         <h:outputLabel value="Día inicio"/>
-                        <p:selectOneMenu value="#{usuarioBean.seleccionado.diaInicio}" required="true">
-                            <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                        <p:selectOneMenu value="#{usuarioBean.seleccionado.diaInicio}">
                             <f:selectItem itemValue="LUNES" itemLabel="LUNES"/>
                             <f:selectItem itemValue="MARTES" itemLabel="MARTES"/>
                             <f:selectItem itemValue="MIERCOLES" itemLabel="MIERCOLES"/>
@@ -128,8 +150,7 @@
                         </p:selectOneMenu>
 
                         <h:outputLabel value="Día fin"/>
-                        <p:selectOneMenu value="#{usuarioBean.seleccionado.diaFin}" required="true">
-                            <f:selectItem itemLabel="-- Seleccione --" noSelectionOption="true"/>
+                        <p:selectOneMenu value="#{usuarioBean.seleccionado.diaFin}">
                             <f:selectItem itemValue="LUNES" itemLabel="LUNES"/>
                             <f:selectItem itemValue="MARTES" itemLabel="MARTES"/>
                             <f:selectItem itemValue="MIERCOLES" itemLabel="MIERCOLES"/>
@@ -141,48 +162,48 @@
 
                         <h:outputLabel value="Hora inicio"/>
                         <p:datePicker value="#{usuarioBean.seleccionado.horaInicio}"
-                                      pattern="HH:mm"
-                                      showTime="true"
-                                      timeOnly="true"
-                                      hourFormat="24"
-                                      required="true"/>
+                                      pattern="HH:mm" showTime="true"
+                                      timeOnly="true" hourFormat="24"/>
 
                         <h:outputLabel value="Hora fin"/>
                         <p:datePicker value="#{usuarioBean.seleccionado.horaFin}"
-                                      pattern="HH:mm"
-                                      showTime="true"
-                                      timeOnly="true"
-                                      hourFormat="24"
-                                      required="true"/>
+                                      pattern="HH:mm" showTime="true"
+                                      timeOnly="true" hourFormat="24"/>
 
                     </h:panelGroup>
 
                 </h:panelGrid>
 
+                <!-- BOTONES -->
                 <p:commandButton value="Guardar"
                                  action="#{usuarioBean.guardar}"
                                  update=":frmUsuarios:tablaUsuarios :global:msgs"
                                  oncomplete="if (!args.validationFailed) PF('dlgUsuario').hide();"
                                  styleClass="p-mt-3"/>
+
                 <p:commandButton value="Cancelar"
                                  type="button"
                                  onclick="PF('dlgUsuario').hide()"
                                  styleClass="p-button-secondary"
                                  style="margin-left:10px"/>
-
             </h:form>
         </p:dialog>
 
         <!-- DIALOGO PASSWORD -->
         <p:dialog id="dlgPassword" widgetVar="dlgPassword" modal="true" width="450"
-                  header="Cambiar contraseña">
+                  header="Cambiar contraseña"
+                  appendTo="@(body)">
             <h:form id="frmPassword">
+
                 <h:outputLabel value="Actual"/>
                 <p:password value="#{usuarioBean.passwordActual}"/>
+
                 <h:outputLabel value="Nueva"/>
                 <p:password value="#{usuarioBean.passwordNueva}"/>
+
                 <h:outputLabel value="Confirmar"/>
                 <p:password value="#{usuarioBean.passwordConfirmacion}"/>
+
                 <p:commandButton value="Actualizar contraseña"
                                  action="#{usuarioBean.cambiarPassword}"
                                  update=":frmUsuarios:tablaUsuarios :global:msgs"
