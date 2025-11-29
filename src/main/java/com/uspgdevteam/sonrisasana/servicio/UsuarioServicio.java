@@ -19,9 +19,9 @@ public class UsuarioServicio extends GenericService<Usuario> {
         super(Usuario.class);
     }
 
-    // ============================
-    // LISTADOS GENERALES
-    // ============================
+    // ============================================================
+    // LISTADOS
+    // ============================================================
 
     public List<Usuario> listar() {
         return findAll();
@@ -47,16 +47,13 @@ public class UsuarioServicio extends GenericService<Usuario> {
                 .orElse(null));
     }
 
-    // ============================
-    // LOGIN (TEXTO PLANO)
-    // ============================
+    // ============================================================
+    // LOGIN (contraseña en texto plano)
+    // ============================================================
 
     public Usuario login(String username, String password) {
         return executeInTx(em -> em.createQuery(
-                        "SELECT u FROM Usuario u " +
-                                "WHERE u.username = :user " +
-                                "AND u.passwordHash = :pass " +
-                                "AND u.activo = true",
+                        "SELECT u FROM Usuario u WHERE u.username = :user AND u.passwordHash = :pass AND u.activo = true",
                         Usuario.class)
                 .setParameter("user", username)
                 .setParameter("pass", password)
@@ -65,15 +62,14 @@ public class UsuarioServicio extends GenericService<Usuario> {
                 .orElse(null));
     }
 
-    // ============================
+    // ============================================================
     // VALIDACIONES
-    // ============================
+    // ============================================================
 
     public boolean emailExiste(String email, Long excluirId) {
         return executeInTx(em ->
                 em.createQuery(
-                                "SELECT COUNT(u) FROM Usuario u " +
-                                        "WHERE u.email = :email AND u.id <> :id",
+                                "SELECT COUNT(u) FROM Usuario u WHERE u.email = :email AND u.id <> :id",
                                 Long.class)
                         .setParameter("email", email)
                         .setParameter("id", excluirId == null ? -1L : excluirId)
@@ -83,48 +79,42 @@ public class UsuarioServicio extends GenericService<Usuario> {
     public boolean usernameExiste(String username, Long excluirId) {
         return executeInTx(em ->
                 em.createQuery(
-                                "SELECT COUNT(u) FROM Usuario u " +
-                                        "WHERE u.username = :username AND u.id <> :id",
+                                "SELECT COUNT(u) FROM Usuario u WHERE u.username = :username AND u.id <> :id",
                                 Long.class)
                         .setParameter("username", username)
                         .setParameter("id", excluirId == null ? -1L : excluirId)
                         .getSingleResult() > 0);
     }
 
-    // ============================
-    // ODONTÓLOGOS
-    // ============================
+    // ============================================================
+    // ODONTOLOGOS
+    // ============================================================
 
     public List<Usuario> listarOdontologos() {
         return executeInTx(em -> em.createQuery(
-                        "SELECT u FROM Usuario u " +
-                                "WHERE UPPER(u.rol.nombre) = 'ODONTOLOGO' " +
-                                "AND u.activo = true",
+                        "SELECT u FROM Usuario u WHERE UPPER(u.rol.nombre) = 'ODONTOLOGO' AND u.activo = true",
                         Usuario.class)
                 .getResultList());
     }
 
     public List<Usuario> listarOdontologosPorEspecialidad(Especialidad esp) {
         return executeInTx(em -> em.createQuery(
-                        "SELECT u FROM Usuario u " +
-                                "WHERE u.rol.nombre = 'ODONTOLOGO' AND u.especialidad = :esp AND u.activo = true",
+                        "SELECT u FROM Usuario u WHERE u.rol.nombre = 'ODONTOLOGO' AND u.especialidad = :esp AND u.activo = true",
                         Usuario.class)
                 .setParameter("esp", esp)
                 .getResultList());
     }
 
-    // ============================
+    // ============================================================
     // HORARIOS
-    // ============================
+    // ============================================================
 
     public boolean estaDentroDeHorario(Usuario odo, LocalDateTime inicio, LocalDateTime fin) {
-
         if (!odo.esOdontologo()) return true;
-
         if (odo.getDiaInicio() == null || odo.getDiaFin() == null ||
                 odo.getHoraInicio() == null || odo.getHoraFin() == null) return true;
 
-        int dia = inicio.getDayOfWeek().getValue(); // 1 = Lunes ... 7 = Domingo
+        int dia = inicio.getDayOfWeek().getValue(); // 1 = lunes ... 7 = domingo
         int inicioDia = convertirDia(odo.getDiaInicio());
         int finDia = convertirDia(odo.getDiaFin());
 
@@ -134,8 +124,7 @@ public class UsuarioServicio extends GenericService<Usuario> {
         LocalTime horaI = inicio.toLocalTime();
         LocalTime horaF = fin.toLocalTime();
 
-        return !horaI.isBefore(odo.getHoraInicio()) &&
-                !horaF.isAfter(odo.getHoraFin());
+        return !horaI.isBefore(odo.getHoraInicio()) && !horaF.isAfter(odo.getHoraFin());
     }
 
     private int convertirDia(String dia) {
@@ -146,23 +135,19 @@ public class UsuarioServicio extends GenericService<Usuario> {
             case "JUEVES" -> 4;
             case "VIERNES" -> 5;
             case "SABADO" -> 6;
-            default -> 7; // DOMINGO
+            default -> 7; // domingo
         };
     }
 
-    // ============================
+    // ============================================================
     // TRASLAPE DE CITAS
-    // ============================
+    // ============================================================
 
     public List<Cita> listarCitasDeOdontologoEnRango(Long odontologoId,
                                                      LocalDateTime inicio,
                                                      LocalDateTime fin) {
-
         return executeInTx(em -> em.createQuery(
-                        "SELECT c FROM Cita c " +
-                                "WHERE c.odontologo.id = :odo " +
-                                "AND c.fechaFin > :inicio " +
-                                "AND c.fechaInicio < :fin",
+                        "SELECT c FROM Cita c WHERE c.odontologo.id = :odo AND c.fechaFin > :inicio AND c.fechaInicio < :fin",
                         Cita.class)
                 .setParameter("odo", odontologoId)
                 .setParameter("inicio", inicio)
@@ -170,31 +155,37 @@ public class UsuarioServicio extends GenericService<Usuario> {
                 .getResultList());
     }
 
-    // ============================
-    // GUARDAR USUARIO (nuevo o actualizar)
-    // ============================
+    // ============================================================
+    // GUARDAR USUARIO (nueva o actualización)
+    // ============================================================
 
     @Override
     public Usuario save(Usuario u) {
-        // Contraseña en texto plano si es nuevo
-        if (u.getId() == null && (u.getPasswordHash() == null || u.getPasswordHash().isEmpty())) {
-            u.setPasswordHash("123456"); // contraseña por defecto
+        if (u.getId() == null) {
+            // Nuevo usuario
+            if (u.getPasswordHash() == null || u.getPasswordHash().isEmpty()) {
+                u.setPasswordHash("123456");
+            }
+            return executeInTx(em -> {
+                em.persist(u);
+                em.flush();
+                return u;
+            });
+        } else {
+            // Actualización
+            return executeInTx(em -> em.merge(u));
         }
-
-        return super.save(u);
     }
 
-    // ============================
-    // ELIMINAR
-    // ============================
+    // ============================================================
+    // ELIMINAR USUARIO
+    // ============================================================
 
     @Override
     public void delete(Long id) {
         executeInTxVoid(em -> {
             Usuario u = em.find(Usuario.class, id);
-            if (u != null) {
-                em.remove(u);
-            }
+            if (u != null) em.remove(u);
         });
     }
 
