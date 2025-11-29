@@ -2,6 +2,7 @@ package com.uspgdevteam.sonrisasana.web;
 
 import com.uspgdevteam.sonrisasana.entidad.Usuario;
 import com.uspgdevteam.sonrisasana.servicio.UsuarioServicio;
+
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -17,39 +18,37 @@ public class LoginBean implements Serializable {
 
     private String username;
     private String password;
+    private Usuario usuarioLogueado;
 
     @Inject
     private UsuarioServicio usuarioServicio;
 
-    private Usuario usuarioLogueado;
-
     public void login() {
-
-        Usuario u = usuarioServicio.login(username, password);
-
-        if (u == null) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Credenciales inválidas",
-                            "Usuario o contraseña incorrectos"));
-            return;
-        }
-
-        this.usuarioLogueado = u;
-        this.username = null;
-        this.password = null;
-
         try {
+            Usuario u = usuarioServicio.login(username, password);
+
+            if (u == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                                "Credenciales inválidas", "Usuario o contraseña incorrectos"));
+                return;
+            }
+
+            this.usuarioLogueado = u;
+            this.username = null;
+            this.password = null;
+
+            // Redirigir según rol
             if (u.esAdministrador()) {
                 redirect("dashboard.xhtml");
             } else if (u.esOdontologo()) {
-                redirect("citas.xhtml");
+                redirect("citas.xhtml"); // agenda del odontólogo
             } else {
-                redirect("citas.xhtml");
+                redirect("pacientes.xhtml");
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Error al redirigir después del login", e);
+            e.printStackTrace();
         }
     }
 
@@ -58,15 +57,22 @@ public class LoginBean implements Serializable {
             FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
             redirect("login.xhtml");
         } catch (IOException e) {
-            throw new RuntimeException("Error en logout", e);
+            e.printStackTrace();
         }
     }
 
     private void redirect(String url) throws IOException {
-        FacesContext.getCurrentInstance()
-                .getExternalContext()
-                .redirect(url);
+        FacesContext.getCurrentInstance().getExternalContext().redirect(url);
     }
+
+    // GETTERS / SETTERS
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+
+    public Usuario getUsuarioLogueado() { return usuarioLogueado; }
 
     public boolean isAdministrador() {
         return usuarioLogueado != null && usuarioLogueado.esAdministrador();
@@ -79,18 +85,4 @@ public class LoginBean implements Serializable {
     public boolean isRecepcionista() {
         return usuarioLogueado != null && usuarioLogueado.esRecepcionista();
     }
-
-    public Usuario getUsuarioLogueado() {
-        return usuarioLogueado;
-    }
-
-    public String getNombreUsuario() {
-        return usuarioLogueado != null ? usuarioLogueado.getNombreCompleto() : "";
-    }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
 }
