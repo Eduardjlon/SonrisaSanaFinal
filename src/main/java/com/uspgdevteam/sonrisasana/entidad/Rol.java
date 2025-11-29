@@ -2,6 +2,7 @@ package com.uspgdevteam.sonrisasana.entidad;
 
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.util.List;
 
 @Entity
 @Table(name = "roles")
@@ -11,11 +12,14 @@ public class Rol implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 30)
+    @Column(nullable = false, unique = true, length = 50)
     private String nombre; // ADMINISTRADOR, ODONTOLOGO, RECEPCIONISTA
 
-    @Column(length = 255)
+    @Column(length = 200)
     private String descripcion;
+
+    @OneToMany(mappedBy = "rol")
+    private List<Usuario> usuarios;
 
     public Rol() {}
 
@@ -47,9 +51,13 @@ public class Rol implements Serializable {
         this.descripcion = descripcion;
     }
 
-    // ============================
-    // equals() y hashCode() CORREGIDOS
-    // ============================
+    public List<Usuario> getUsuarios() {
+        return usuarios;
+    }
+
+    public void setUsuarios(List<Usuario> usuarios) {
+        this.usuarios = usuarios;
+    }
 
     @Override
     public boolean equals(Object o) {

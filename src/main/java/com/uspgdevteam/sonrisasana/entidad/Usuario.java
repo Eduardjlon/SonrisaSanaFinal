@@ -3,6 +3,7 @@ package com.uspgdevteam.sonrisasana.entidad;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -18,7 +19,7 @@ public class Usuario implements Serializable {
     @Column(nullable = false, unique = true, length = 40)
     private String username;
 
-    @Column(nullable = false, length = 120)
+    @Column(nullable = false, unique = true, length = 120)
     private String email;
 
     @Column(name = "password_hash", nullable = false, length = 255)
@@ -31,27 +32,32 @@ public class Usuario implements Serializable {
     @JoinColumn(name = "rol_id")
     private Rol rol;
 
-    // ⭐ Especialidad del odontólogo
-    @Enumerated(EnumType.STRING)
-    @Column(name = "especialidad", length = 50)
-    private EspecialidadOdontologica especialidad;
+    // ===============================
+    // HORARIO LABORAL (solo odontólogos)
+    // ===============================
 
-    // ⭐ Horario laboral (solo para odontólogos)
-    @Column(name = "dia_inicio", length = 15)
-    private String diaInicio;  // Ejemplo: LUNES
+    @Column(name = "dia_inicio", length = 20)
+    private String diaInicio;
 
-    @Column(name = "dia_fin", length = 15)
-    private String diaFin;     // Ejemplo: VIERNES
+    @Column(name = "dia_fin", length = 20)
+    private String diaFin;
 
     @Column(name = "hora_inicio")
-    private LocalTime horaInicio; // Ejemplo: 09:00
+    private LocalTime horaInicio;
 
     @Column(name = "hora_fin")
-    private LocalTime horaFin;    // Ejemplo: 13:00
+    private LocalTime horaFin;
+
+    // ===============================
+    // RELACIÓN CON CITAS
+    // ===============================
+
+    @OneToMany(mappedBy = "odontologo")
+    private List<Cita> citas;
 
     public Usuario() {}
 
-    // GETTERS / SETTERS
+    // ======= GETTERS / SETTERS =======
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -73,9 +79,6 @@ public class Usuario implements Serializable {
     public Rol getRol() { return rol; }
     public void setRol(Rol rol) { this.rol = rol; }
 
-    public EspecialidadOdontologica getEspecialidad() { return especialidad; }
-    public void setEspecialidad(EspecialidadOdontologica especialidad) { this.especialidad = especialidad; }
-
     public String getDiaInicio() { return diaInicio; }
     public void setDiaInicio(String diaInicio) { this.diaInicio = diaInicio; }
 
@@ -88,7 +91,10 @@ public class Usuario implements Serializable {
     public LocalTime getHoraFin() { return horaFin; }
     public void setHoraFin(LocalTime horaFin) { this.horaFin = horaFin; }
 
-    // MÉTODOS DE ROL
+    public List<Cita> getCitas() { return citas; }
+    public void setCitas(List<Cita> citas) { this.citas = citas; }
+
+    // ======= MÉTODOS DE ROL =======
     public boolean esAdministrador() {
         return rol != null && "ADMINISTRADOR".equalsIgnoreCase(rol.getNombre());
     }

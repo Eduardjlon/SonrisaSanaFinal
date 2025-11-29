@@ -23,11 +23,15 @@ public class LoginBean implements Serializable {
 
     private Usuario usuarioLogueado;
 
+    // ===========================================================
+    // LOGIN PRINCIPAL
+    // ===========================================================
 
     public void login() {
-        Usuario u = usuarioServicio.buscarPorUsername(username);
 
-        if (u == null || !passwordValida(password, u.getPasswordHash())) {
+        Usuario u = usuarioServicio.login(username, password);
+
+        if (u == null) {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR,
                             "Credenciales inválidas",
@@ -35,73 +39,87 @@ public class LoginBean implements Serializable {
             return;
         }
 
+        // Guardar usuario en sesión
         this.usuarioLogueado = u;
 
+        // Limpiar variables
+        this.username = null;
+        this.password = null;
+
         try {
-            FacesContext.getCurrentInstance().getExternalContext()
-                    .redirect("dashboard.xhtml");
+            // Redirigir según rol
+            if (u.esAdministrador()) {
+                redirect("dashboard.xhtml");
+            } else if (u.esOdontologo()) {
+                redirect("agenda.xhtml");
+            } else {
+                redirect("pacientes.xhtml");
+            }
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error al redirigir después del login", e);
         }
     }
 
+    // ===========================================================
+    // LOGOUT
+    // ===========================================================
 
-    public void logout() throws IOException {
-        FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
-        FacesContext.getCurrentInstance().getExternalContext().redirect("login.xhtml");
+    public void logout() {
+        try {
+            FacesContext.getCurrentInstance().getExternalContext().invalidateSession();
+            redirect("login.xhtml");
+        } catch (IOException e) {
+            throw new RuntimeException("Error en logout", e);
+        }
     }
 
+    // ===========================================================
+    // MÉTODO DE REDIRECCIÓN
+    // ===========================================================
 
-    private boolean passwordValida(String raw, String hash) {
-        // Temporal: comparar texto plano
-        return raw != null && raw.equals(hash);
+    private void redirect(String url) throws IOException {
+        FacesContext.getCurrentInstance()
+                .getExternalContext()
+                .redirect(url);
     }
 
+    // ===========================================================
+    // MÉTODOS DE ROL
+    // ===========================================================
 
     public String getRol() {
-        if (usuarioLogueado == null || usuarioLogueado.getRol() == null) {
-            return null;
-        }
+        if (usuarioLogueado == null || usuarioLogueado.getRol() == null) return null;
         return usuarioLogueado.getRol().getNombre();
     }
 
     public boolean isAdministrador() {
-        return "ADMINISTRADOR".equals(getRol());
+        return usuarioLogueado != null && usuarioLogueado.esAdministrador();
     }
 
     public boolean isOdontologo() {
-        return "ODONTOLOGO".equals(getRol());
+        return usuarioLogueado != null && usuarioLogueado.esOdontologo();
     }
 
     public boolean isRecepcionista() {
-        return "RECEPCIONISTA".equals(getRol());
+        return usuarioLogueado != null && usuarioLogueado.esRecepcionista();
     }
 
+    // ===========================================================
+    // GETTERS / SETTERS
+    // ===========================================================
 
     public Usuario getUsuarioLogueado() {
         return usuarioLogueado;
     }
 
     public String getNombreUsuario() {
-        if (usuarioLogueado != null) {
-            return usuarioLogueado.getNombreCompleto();
-        }
-        return "";
+        return usuarioLogueado != null ? usuarioLogueado.getNombreCompleto() : "";
     }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }

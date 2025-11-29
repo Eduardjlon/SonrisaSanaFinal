@@ -33,16 +33,15 @@ public class PacienteBean implements Serializable {
 
     @PostConstruct
     public void init() {
+        cargarPacientes();
+    }
+
+    private void cargarPacientes() {
         try {
             pacientes = pacienteServicio.listar();
         } catch (Exception e) {
-            e.printStackTrace();
             pacientes = Collections.emptyList();
-
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                            "Error",
-                            "No se pudieron cargar los pacientes."));
+            mostrarError("Error", "No se pudieron cargar los pacientes.");
         }
     }
 
@@ -50,68 +49,60 @@ public class PacienteBean implements Serializable {
     // NUEVO
     // ================================
     public void nuevo() {
-        paciente = new Paciente();
+        paciente = new Paciente(); // fechaCreacion se setea desde la entidad
     }
 
     // ================================
     // EDITAR
     // ================================
     public void editar(Paciente p) {
-        this.paciente = p;
+        this.paciente = pacienteServicio.buscarPorId(p.getId());
     }
 
     // ================================
     // GUARDAR
     // ================================
     public void guardar() {
-        try {
 
-            boolean esNuevo = (paciente.getId() == null);
+        boolean esNuevo = (paciente.getId() == null);
 
-            // -----------------------------
-            // VALIDACIÓN FECHA NACIMIENTO
-            // -----------------------------
-            if (paciente.getFechaNacimiento() == null) {
-                mostrarError("Fecha inválida", "Debe ingresar una fecha de nacimiento.");
-                return;
-            }
-
-            if (paciente.getFechaNacimiento().isAfter(LocalDate.now())) {
-                mostrarError("Fecha inválida", "La fecha de nacimiento no puede ser futura.");
-                return;
-            }
-
-            // -----------------------------
-            // GUARDAR (usa validaciones internas del servicio)
-            // -----------------------------
-            try {
-                pacienteServicio.guardar(paciente);
-            } catch (RuntimeException ex) {
-                // errores lanzados desde el servicio (DPI duplicado)
-                mostrarError("Error al guardar", ex.getMessage());
-                return;
-            }
-
-            // -----------------------------
-            // GUARDAR HISTORIAL
-            // -----------------------------
-            String descripcion = esNuevo ?
-                    "Se creó el expediente" :
-                    "Se actualizó información del paciente";
-
-            historialServicio.guardar(
-                    new HistorialExpediente(paciente, descripcion)
-            );
-
-            // Recargar lista
-            pacientes = pacienteServicio.listar();
-
-            mostrarOk("Paciente guardado correctamente");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            mostrarError("Error", "No se pudo guardar el paciente.");
+        // VALIDACIÓN FECHA NACIMIENTO
+        if (paciente.getFechaNacimiento() == null) {
+            mostrarError("Fecha inválida", "Debe ingresar una fecha de nacimiento.");
+            return;
         }
+
+        if (paciente.getFechaNacimiento().isAfter(LocalDate.now())) {
+            mostrarError("Fecha inválida", "La fecha de nacimiento no puede ser futura.");
+            return;
+        }
+
+        // GUARDAR PACIENTE
+        try {
+            pacienteServicio.save(paciente);
+        } catch (RuntimeException ex) {
+            mostrarError("Error al guardar", ex.getMessage());
+            return;
+        }
+
+        // GUARDAR HISTORIAL
+        String descripcion = esNuevo ?
+                "Se creó el expediente" :
+                "Se actualizó información del paciente";
+
+        try {
+            historialServicio.guardar(new HistorialExpediente(paciente, descripcion));
+        } catch (Exception e) {
+            mostrarError("Advertencia", "Paciente guardado, pero no se pudo registrar historial.");
+        }
+
+        // Recargar tabla
+        cargarPacientes();
+
+        // Limpia el formulario
+        paciente = null;
+
+        mostrarOk("Paciente guardado correctamente");
     }
 
     // ================================
@@ -119,13 +110,12 @@ public class PacienteBean implements Serializable {
     // ================================
     public void eliminar(Paciente p) {
         try {
-            pacienteServicio.eliminar(p);
-            pacientes = pacienteServicio.listar();
+            pacienteServicio.delete(p.getId());
+            cargarPacientes();
 
             mostrarOk("Paciente eliminado");
 
         } catch (Exception e) {
-            e.printStackTrace();
             mostrarError("Error", "No se pudo eliminar el paciente.");
         }
     }
@@ -136,12 +126,11 @@ public class PacienteBean implements Serializable {
     public void buscar() {
         try {
             if (filtroBusqueda == null || filtroBusqueda.isBlank()) {
-                pacientes = pacienteServicio.listar();
+                cargarPacientes();
             } else {
                 pacientes = pacienteServicio.buscar(filtroBusqueda.trim());
             }
         } catch (Exception e) {
-            e.printStackTrace();
             pacientes = Collections.emptyList();
         }
     }
@@ -160,7 +149,6 @@ public class PacienteBean implements Serializable {
         try {
             return historialServicio.obtenerHistorial(p);
         } catch (Exception e) {
-            e.printStackTrace();
             return Collections.emptyList();
         }
     }

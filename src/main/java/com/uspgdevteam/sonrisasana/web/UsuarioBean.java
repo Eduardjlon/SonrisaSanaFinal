@@ -2,7 +2,6 @@ package com.uspgdevteam.sonrisasana.web;
 
 import com.uspgdevteam.sonrisasana.entidad.Rol;
 import com.uspgdevteam.sonrisasana.entidad.Usuario;
-import com.uspgdevteam.sonrisasana.entidad.EspecialidadOdontologica;
 import com.uspgdevteam.sonrisasana.servicio.RolServicio;
 import com.uspgdevteam.sonrisasana.servicio.UsuarioServicio;
 
@@ -38,7 +37,7 @@ public class UsuarioBean implements Serializable {
     private String passwordNueva;
     private String passwordConfirmacion;
 
-    /** ⭐ Lista fija de días */
+    /** Lista fija de días */
     private final List<String> diasSemana = Arrays.asList(
             "LUNES", "MARTES", "MIERCOLES", "JUEVES", "VIERNES", "SABADO", "DOMINGO"
     );
@@ -63,8 +62,9 @@ public class UsuarioBean implements Serializable {
     public void editar(Usuario u) {
         seleccionado = usuarioServicio.findById(u.getId());
 
-        // Si el odontólogo no tiene horario aún, dejamos valores vacíos
+        // Si es odontólogo y no tiene horarios, setear valores por defecto
         if (seleccionado.esOdontologo()) {
+
             if (seleccionado.getDiaInicio() == null) seleccionado.setDiaInicio("LUNES");
             if (seleccionado.getDiaFin() == null) seleccionado.setDiaFin("VIERNES");
 
@@ -86,18 +86,9 @@ public class UsuarioBean implements Serializable {
             return;
         }
 
-        // ⭐ VALIDACIONES EXCLUSIVAS PARA ODONTÓLOGO
+        // Validaciones para odontólogos
         if (seleccionado.esOdontologo()) {
 
-            // Validación especialidad
-            if (seleccionado.getEspecialidad() == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                                "Debe seleccionar la especialidad del odontólogo", null));
-                return;
-            }
-
-            // Validación días
             if (seleccionado.getDiaInicio() == null || seleccionado.getDiaFin() == null) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -105,7 +96,6 @@ public class UsuarioBean implements Serializable {
                 return;
             }
 
-            // Validación horario
             if (seleccionado.getHoraInicio() == null || seleccionado.getHoraFin() == null) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -113,7 +103,6 @@ public class UsuarioBean implements Serializable {
                 return;
             }
 
-            // Evitar horarios invertidos
             if (seleccionado.getHoraFin().isBefore(seleccionado.getHoraInicio())) {
                 FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_ERROR,
@@ -122,8 +111,7 @@ public class UsuarioBean implements Serializable {
             }
 
         } else {
-            /** ⭐ LIMPIAR CAMPOS SI NO ES ODONTÓLOGO */
-            seleccionado.setEspecialidad(null);
+            // Si NO es odontólogo → limpiar horarios
             seleccionado.setDiaInicio(null);
             seleccionado.setDiaFin(null);
             seleccionado.setHoraInicio(null);
@@ -199,13 +187,8 @@ public class UsuarioBean implements Serializable {
     // ===============================
     // GETTERS / SETTERS
     // ===============================
-    public EspecialidadOdontologica[] getEspecialidades() {
-        return EspecialidadOdontologica.values();
-    }
 
-    public List<String> getDiasSemana() {
-        return diasSemana;
-    }
+    public List<String> getDiasSemana() { return diasSemana; }
 
     public List<Usuario> getUsuarios() { return usuarios; }
 

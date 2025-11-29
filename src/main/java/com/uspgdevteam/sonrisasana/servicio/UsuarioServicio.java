@@ -1,12 +1,10 @@
 package com.uspgdevteam.sonrisasana.servicio;
 
-import com.uspgdevteam.sonrisasana.entidad.EspecialidadOdontologica;
 import com.uspgdevteam.sonrisasana.entidad.Usuario;
 import com.uspgdevteam.sonrisasana.entidad.Cita;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
-
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -18,6 +16,10 @@ public class UsuarioServicio extends GenericService<Usuario> {
     public UsuarioServicio() {
         super(Usuario.class);
     }
+
+    // ===========================================================
+    // LISTADOS GENERALES
+    // ===========================================================
 
     public List<Usuario> listar() {
         return findAll();
@@ -34,7 +36,29 @@ public class UsuarioServicio extends GenericService<Usuario> {
                 .orElse(null));
     }
 
-    /** 🔎 Verifica si un email está en uso */
+    // ===========================================================
+    // LOGIN
+    // ===========================================================
+
+    /** ✔ Login correcto alineado a SQL (password_hash) */
+    public Usuario login(String username, String password) {
+        return executeInTx(em -> em.createQuery(
+                        "SELECT u FROM Usuario u " +
+                                "WHERE u.username = :user " +
+                                "AND u.passwordHash = :pass " +
+                                "AND u.activo = true",
+                        Usuario.class)
+                .setParameter("user", username)
+                .setParameter("pass", password)
+                .getResultStream()
+                .findFirst()
+                .orElse(null));
+    }
+
+    // ===========================================================
+    // VALIDACIÓN DE DATOS
+    // ===========================================================
+
     public boolean emailExiste(String email, Long excluirId) {
         return executeInTx(em ->
                 em.createQuery(
@@ -47,7 +71,7 @@ public class UsuarioServicio extends GenericService<Usuario> {
         );
     }
 
-    /** ⭐ Listar solo odontólogos */
+    /** ✔ Listar únicamente odontólogos */
     public List<Usuario> listarOdontologos() {
         return executeInTx(em -> em.createQuery(
                         "SELECT u FROM Usuario u " +
@@ -57,30 +81,17 @@ public class UsuarioServicio extends GenericService<Usuario> {
         );
     }
 
-    /** ⭐ Listar odontólogos por especialidad */
-    public List<Usuario> listarPorEspecialidad(EspecialidadOdontologica especialidad) {
-        return executeInTx(em -> em.createQuery(
-                        "SELECT u FROM Usuario u " +
-                                "WHERE u.especialidad = :esp AND u.activo = true",
-                        Usuario.class)
-                .setParameter("esp", especialidad)
-                .getResultList()
-        );
-    }
-
     // ===========================================================
-    //   VALIDACIÓN DE HORARIO DE TRABAJO DEL ODONTÓLOGO
+    // HORARIOS
     // ===========================================================
 
-    /**
-     * ⭐ Valida si un odontólogo trabaja en esa fecha y hora.
-     * Se usa dentro de CitaServicio.esHorarioValido()
-     */
+    /** ✔ Valida si un odontólogo tiene horario disponible */
     public boolean estaDentroDeHorario(Usuario odo, LocalDateTime inicio, LocalDateTime fin) {
 
+        // Si no tiene horario asignado → se permite
         if (odo.getDiaInicio() == null || odo.getDiaFin() == null ||
                 odo.getHoraInicio() == null || odo.getHoraFin() == null) {
-            return false; // no tiene horario configurado
+            return true;
         }
 
         int dia = inicio.getDayOfWeek().getValue(); // 1 = Lunes ... 7 = Domingo
@@ -98,7 +109,6 @@ public class UsuarioServicio extends GenericService<Usuario> {
                 !horaFin.isAfter(odo.getHoraFin());
     }
 
-    /** Convierte nombre de día a número (LUNES = 1 ... DOMINGO = 7) */
     private int convertirDia(String dia) {
         return switch (dia.toUpperCase()) {
             case "LUNES" -> 1;
@@ -112,12 +122,9 @@ public class UsuarioServicio extends GenericService<Usuario> {
     }
 
     // ===========================================================
-    //   TRASLAPE DE CITAS (apoyará a CitaServicio)
+    // TRASLAPE DE CITAS PARA UN ODONTÓLOGO
     // ===========================================================
 
-    /**
-     * 🔎 Obtiene citas del odontólogo en un rango para validar traslape.
-     */
     public List<Cita> listarCitasDeOdontologoEnRango(Long odontologoId,
                                                      LocalDateTime inicio,
                                                      LocalDateTime fin) {

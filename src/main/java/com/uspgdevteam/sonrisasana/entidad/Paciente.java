@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Period;
+import java.util.List;
 
 @Entity
 @Table(name = "pacientes")
@@ -13,10 +13,6 @@ public class Paciente implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    // ---------------------
-    // DATOS PERSONALES
-    // ---------------------
 
     @Column(name = "nombre_completo", nullable = false, length = 120)
     private String nombreCompleto;
@@ -33,25 +29,14 @@ public class Paciente implements Serializable {
     @Column(length = 150)
     private String direccion;
 
-    @Transient
-    private Integer edad;
-
-    // ---------------------
-    // DATOS CLÍNICOS
-    // ---------------------
-
     @Column(length = 250)
     private String alergias;
 
-    @Column(length = 300)
+    @Column(name = "condiciones_medicas", length = 300)
     private String condicionesMedicas;
 
     @Column(length = 300)
     private String observaciones;
-
-    // ---------------------
-    // EXPEDIENTE DIGITAL
-    // ---------------------
 
     @Column(name = "fecha_creacion_expediente", nullable = false)
     private LocalDateTime fechaCreacionExpediente;
@@ -59,24 +44,27 @@ public class Paciente implements Serializable {
     @Column(name = "ultima_actualizacion")
     private LocalDateTime ultimaActualizacion;
 
-    @PrePersist
-    public void prePersist() {
-        fechaCreacionExpediente = LocalDateTime.now();
-        ultimaActualizacion = LocalDateTime.now();
+    // ==========================
+    // RELACIONES
+    // ==========================
+
+    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL)
+    private List<Cita> citas;
+
+    @OneToMany(mappedBy = "paciente", cascade = CascadeType.ALL)
+    private List<ArchivoClinico> archivosClinicos;
+
+    // ==========================
+    // CONSTRUCTOR
+    // ==========================
+
+    public Paciente() {
+        this.fechaCreacionExpediente = LocalDateTime.now();
     }
 
-    @PreUpdate
-    public void preUpdate() {
-        ultimaActualizacion = LocalDateTime.now();
-    }
-
-    public Integer getEdad() {
-        if (fechaNacimiento == null)
-            return null;
-        return Period.between(fechaNacimiento, LocalDate.now()).getYears();
-    }
-
+    // ==========================
     // GETTERS / SETTERS
+    // ==========================
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -110,4 +98,10 @@ public class Paciente implements Serializable {
 
     public LocalDateTime getUltimaActualizacion() { return ultimaActualizacion; }
     public void setUltimaActualizacion(LocalDateTime ultimaActualizacion) { this.ultimaActualizacion = ultimaActualizacion; }
+
+    public List<Cita> getCitas() { return citas; }
+    public void setCitas(List<Cita> citas) { this.citas = citas; }
+
+    public List<ArchivoClinico> getArchivosClinicos() { return archivosClinicos; }
+    public void setArchivosClinicos(List<ArchivoClinico> archivosClinicos) { this.archivosClinicos = archivosClinicos; }
 }
