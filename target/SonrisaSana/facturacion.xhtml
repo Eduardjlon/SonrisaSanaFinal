@@ -1,281 +1,66 @@
-<ui:composition template="/templates/layout.xhtml"
-                xmlns="http://www.w3.org/1999/xhtml"
-                xmlns:h="http://xmlns.jcp.org/jsf/html"
-                xmlns:f="http://xmlns.jcp.org/jsf/core"
-                xmlns:p="http://primefaces.org/ui"
-                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+<!DOCTYPE html>
+<html lang="es"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <ui:define name="content">
-        <h1>Gestión de Facturación</h1>
+<h:head>
+    <title>Facturación - Sonrisa Sana</title>
+</h:head>
 
-        <p:messages id="messages" />
+<h:body>
+    <h:form id="formFacturas">
 
-        <!-- FORMULARIO DE FACTURA -->
-        <p:card styleClass="p-mb-4">
-            <f:facet name="title">
-                <h3>Nueva Factura</h3>
-            </f:facet>
+        <p:growl id="msgs" showDetail="true"/>
 
-            <h:form id="facturaForm">
-                <div class="p-grid">
-                    <!-- Selección de Paciente -->
-                    <div class="p-col-12 p-md-6">
-                        <p:outputLabel for="paciente" value="Paciente *" />
-                        <p:selectOneMenu id="paciente" value="#{facturaBean.pacienteId}" 
-                                         style="width: 100%">
-                            <f:selectItem itemLabel="Seleccione un paciente" itemValue="" />
-                            <f:selectItems value="#{facturaBean.pacientes}" 
-                                         var="p" 
-                                         itemLabel="#{p.nombreCompleto} - #{p.dpi}" 
-                                         itemValue="#{p.id}" />
-                            <p:ajax event="change" update="cita" />
-                        </p:selectOneMenu>
-                    </div>
+        <h2>Generar Factura desde Citas Confirmadas</h2>
 
-                    <!-- Selección de Cita -->
-                    <div class="p-col-12 p-md-6">
-                        <p:outputLabel for="cita" value="Cita (Opcional)" />
-                        <p:selectOneMenu id="cita" value="#{facturaBean.citaId}" 
-                                         style="width: 100%">
-                            <f:selectItem itemLabel="Sin cita asociada" itemValue="" />
-                            <f:selectItems value="#{facturaBean.citas}" 
-                                         var="c" 
-                                         itemLabel="#{c.paciente.nombreCompleto} - #{c.tratamiento.nombre} (#{c.fechaInicio})" 
-                                         itemValue="#{c.id}" />
-                            <p:ajax event="change" update="subtotal,descuento,seguro,total" 
-                                   listener="#{facturaBean.onCitaSelect()}" />
-                        </p:selectOneMenu>
-                    </div>
+        <p:dataTable value="#{citaServicio.listarTodas()}" var="cita">
+            <p:column headerText="Paciente">
+                #{cita.paciente.nombreCompleto}
+            </p:column>
 
-                    <!-- Subtotal -->
-                    <div class="p-col-12 p-md-4">
-                        <p:outputLabel for="subtotal" value="Subtotal (Q) *" />
-                        <p:inputNumber id="subtotal" 
-                                      value="#{facturaBean.subtotalManual}" 
-                                      minValue="0" 
-                                      decimalPlaces="2"
-                                      symbol="Q"
-                                      style="width: 100%">
-                            <p:ajax event="change" update="total" listener="#{facturaBean.calcularTotal()}" />
-                        </p:inputNumber>
-                    </div>
+            <p:column headerText="Tratamiento">
+                #{cita.tratamiento.nombre}
+            </p:column>
 
-                    <!-- Cupón de Descuento -->
-                    <div class="p-col-12 p-md-4">
-                        <p:outputLabel for="cupon" value="Cupón de Descuento" />
-                        <div class="p-inputgroup">
-                            <p:inputText id="cupon" 
-                                        value="#{facturaBean.codigoCupon}" 
-                                        placeholder="Código del cupón"
-                                        style="width: 100%" />
-                            <p:commandButton value="Aplicar" 
-                                           icon="pi pi-check" 
-                                           action="#{facturaBean.aplicarCupon()}"
-                                           update="descuento,total,messages" />
-                        </div>
-                        <p:outputLabel value="Descuento: Q #{facturaBean.factura.descuento}" 
-                                     rendered="#{facturaBean.factura.descuento != null and facturaBean.factura.descuento > 0}"
-                                     styleClass="p-text-success p-mt-1" />
-                    </div>
+            <p:column headerText="Total">
+                #{cita.total}
+            </p:column>
 
-                    <!-- Seguro -->
-                    <div class="p-col-12 p-md-4">
-                        <p:outputLabel for="seguro" value="Seguro Médico" />
-                        <p:selectOneMenu id="seguro" value="#{facturaBean.seguroId}" 
-                                         style="width: 100%">
-                            <f:selectItem itemLabel="Sin seguro" itemValue="" />
-                            <f:selectItems value="#{facturaBean.seguros}" 
-                                         var="s" 
-                                         itemLabel="#{s.nombre}" 
-                                         itemValue="#{s.id}" />
-                        </p:selectOneMenu>
-                    </div>
+            <p:column headerText="Estado">
+                #{cita.estado}
+            </p:column>
 
-                    <!-- Monto de Cobertura del Seguro -->
-                    <div class="p-col-12 p-md-6">
-                        <p:outputLabel for="montoSeguro" value="Cobertura del Seguro (Q)" />
-                        <p:inputNumber id="montoSeguro" 
-                                      value="#{facturaBean.montoSeguro}" 
-                                      minValue="0" 
-                                      decimalPlaces="2"
-                                      symbol="Q"
-                                      style="width: 100%">
-                            <p:ajax event="change" update="total" listener="#{facturaBean.aplicarSeguro()}" />
-                        </p:inputNumber>
-                    </div>
+            <p:column headerText="Acción">
+                <p:commandButton value="Generar Factura"
+                                 actionListener="#{facturaBean.generarFacturaDesdeCita(cita)}"
+                                 update=":formFacturas :msgs"
+                                 disabled="#{cita.estado != 'CONFIRMADA'}"/>
+            </p:column>
+        </p:dataTable>
 
-                    <!-- Total -->
-                    <div class="p-col-12 p-md-6">
-                        <p:outputLabel for="total" value="Total a Pagar (Q)" />
-                        <p:inputText id="total" 
-                                    value="#{facturaBean.factura.total}" 
-                                    readonly="true"
-                                    style="width: 100%; font-weight: bold; font-size: 1.2em; color: #2563eb;" />
-                    </div>
+        <h2>Facturas Generadas</h2>
 
-                    <!-- Botones -->
-                    <div class="p-col-12">
-                        <p:commandButton value="Guardar Factura" 
-                                       icon="pi pi-save" 
-                                       action="#{facturaBean.guardar()}"
-                                       update="facturaForm,facturasTable,messages"
-                                       styleClass="p-button-primary" />
-                        <p:commandButton value="Nueva Factura" 
-                                       icon="pi pi-plus" 
-                                       action="#{facturaBean.nuevaFactura()}"
-                                       update="facturaForm"
-                                       styleClass="p-button-secondary" />
-                    </div>
-                </div>
-            </h:form>
-        </p:card>
+        <p:dataTable value="#{facturaBean.facturas}" var="f">
+            <p:column headerText="Número">
+                #{f.numero}
+            </p:column>
 
-        <!-- TABLA DE FACTURAS -->
-        <p:card>
-            <f:facet name="title">
-                <h3>Facturas Registradas</h3>
-            </f:facet>
+            <p:column headerText="Paciente">
+                #{f.paciente.nombreCompleto}
+            </p:column>
 
-            <p:dataTable id="facturasTable" 
-                        value="#{facturaBean.facturas}" 
-                        var="fac"
-                        paginator="true"
-                        rows="10"
-                        emptyMessage="No hay facturas registradas"
-                        styleClass="p-datatable-sm">
-                <p:column headerText="Número" sortBy="#{fac.numero}">
-                    <h:outputText value="#{fac.numero}" />
-                </p:column>
+            <p:column headerText="Subtotal">
+                #{f.subtotal}
+            </p:column>
 
-                <p:column headerText="Paciente" sortBy="#{fac.paciente.nombreCompleto}">
-                    <h:outputText value="#{fac.paciente.nombreCompleto}" />
-                </p:column>
+            <p:column headerText="Total">
+                #{f.total}
+            </p:column>
+        </p:dataTable>
 
-                <p:column headerText="Fecha" sortBy="#{fac.fechaEmision}">
-                    <h:outputText value="#{fac.fechaEmision}">
-                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
-                    </h:outputText>
-                </p:column>
-
-                <p:column headerText="Subtotal">
-                    <h:outputText value="Q #{fac.subtotal}">
-                        <f:convertNumber type="currency" currencySymbol="Q" />
-                    </h:outputText>
-                </p:column>
-
-                <p:column headerText="Descuento">
-                    <h:outputText value="Q #{fac.descuento}" 
-                                 rendered="#{fac.descuento != null and fac.descuento > 0}"
-                                 styleClass="p-text-success" />
-                    <h:outputText value="Q 0.00" 
-                                 rendered="#{fac.descuento == null or fac.descuento == 0}" />
-                </p:column>
-
-                <p:column headerText="Seguro">
-                    <h:outputText value="Q #{fac.coberturaSeguro}" 
-                                 rendered="#{fac.coberturaSeguro != null and fac.coberturaSeguro > 0}"
-                                 styleClass="p-text-info" />
-                    <h:outputText value="Q 0.00" 
-                                 rendered="#{fac.coberturaSeguro == null or fac.coberturaSeguro == 0}" />
-                </p:column>
-
-                <p:column headerText="Total">
-                    <h:outputText value="Q #{fac.total}" 
-                                 style="font-weight: bold; color: #2563eb;">
-                        <f:convertNumber type="currency" currencySymbol="Q" />
-                    </h:outputText>
-                </p:column>
-
-                <p:column headerText="Estado">
-                    <p:tag value="#{fac.estado.nombre}" 
-                          severity="#{fac.estado.nombre == 'PAGADO' ? 'success' : (fac.estado.nombre == 'PARCIALMENTE_PAGADO' ? 'warning' : 'info')}" />
-                </p:column>
-
-                <p:column headerText="Saldo Pendiente">
-                    <h:outputText value="Q #{fac.saldoPendiente}" 
-                                 style="font-weight: bold; color: #{fac.saldoPendiente > 0 ? '#dc2626' : '#16a34a'};">
-                        <f:convertNumber type="currency" currencySymbol="Q" />
-                    </h:outputText>
-                </p:column>
-
-                <p:column headerText="Acciones" style="width: 150px;">
-                    <p:commandButton icon="pi pi-money-bill" 
-                                   title="Registrar Pago"
-                                   rendered="#{fac.saldoPendiente > 0}"
-                                   onclick="PF('pagoDialog').show(); PF('pagoForm').show();"
-                                   action="#{facturaBean.prepararPago(fac)}"
-                                   update="pagoForm">
-                        <f:setPropertyActionListener target="#{facturaBean.factura}" value="#{fac}" />
-                    </p:commandButton>
-                </p:column>
-            </p:dataTable>
-        </p:card>
-
-        <!-- DIALOGO DE PAGO -->
-        <p:dialog id="pagoDialog" 
-                 header="Registrar Pago" 
-                 widgetVar="pagoDialog"
-                 modal="true"
-                 resizable="false"
-                 style="width: 500px">
-            <h:form id="pagoForm">
-                <div class="p-grid p-fluid">
-                    <div class="p-col-12">
-                        <p:outputLabel value="Factura: #{facturaBean.factura.numero}" 
-                                     style="font-weight: bold;" />
-                    </div>
-
-                    <div class="p-col-12">
-                        <p:outputLabel value="Saldo Pendiente: Q #{facturaBean.factura.saldoPendiente}" 
-                                     style="font-weight: bold; color: #dc2626;" />
-                    </div>
-
-                    <div class="p-col-12">
-                        <p:outputLabel for="montoPago" value="Monto del Pago (Q) *" />
-                        <p:inputNumber id="montoPago" 
-                                      value="#{facturaBean.montoPago}" 
-                                      minValue="0.01" 
-                                      maxValue="#{facturaBean.factura.saldoPendiente}"
-                                      decimalPlaces="2"
-                                      symbol="Q"
-                                      style="width: 100%" />
-                    </div>
-
-                    <div class="p-col-12">
-                        <p:outputLabel for="metodoPago" value="Método de Pago *" />
-                        <p:selectOneMenu id="metodoPago" 
-                                        value="#{facturaBean.metodoPago}" 
-                                        style="width: 100%">
-                            <f:selectItem itemLabel="Efectivo" itemValue="EFECTIVO" />
-                            <f:selectItem itemLabel="Tarjeta" itemValue="TARJETA" />
-                            <f:selectItem itemLabel="Transferencia" itemValue="TRANSFERENCIA" />
-                        </p:selectOneMenu>
-                    </div>
-
-                    <div class="p-col-12">
-                        <p:outputLabel for="observacionesPago" value="Observaciones" />
-                        <p:inputTextarea id="observacionesPago" 
-                                        value="#{facturaBean.observacionesPago}" 
-                                        rows="3"
-                                        style="width: 100%" />
-                    </div>
-
-                    <div class="p-col-12">
-                        <p:commandButton value="Registrar Pago" 
-                                       icon="pi pi-check" 
-                                       action="#{facturaBean.registrarPago()}"
-                                       update="facturasTable,messages"
-                                       oncomplete="PF('pagoDialog').hide();"
-                                       styleClass="p-button-primary" />
-                        <p:commandButton value="Cancelar" 
-                                       icon="pi pi-times" 
-                                       onclick="PF('pagoDialog').hide();"
-                                       styleClass="p-button-secondary" />
-                    </div>
-                </div>
-            </h:form>
-        </p:dialog>
-
-    </ui:define>
-</ui:composition>
-
+    </h:form>
+</h:body>
+</html>

@@ -14,7 +14,7 @@
             <p:growl id="msgs" showDetail="true" showSummary="true" globalOnly="true"/>
         </h:form>
 
-        <!-- CALENDARIO -->
+        <!-- AGENDA -->
         <h:form id="frmAgenda">
 
             <p:schedule id="agenda"
@@ -28,8 +28,7 @@
                         slotDuration="00:30"
                         view="agendaWeek"
                         minHour="7"
-                        maxHour="20"
-                        style="margin-bottom:30px;">
+                        maxHour="20">
 
                 <p:ajax event="dateSelect"
                         listener="#{citaBean.onDateSelect}"
@@ -45,68 +44,95 @@
 
         </h:form>
 
-        <!-- DIALOGO DE CITA -->
+        <!-- DIALOGO CITA -->
         <p:dialog id="dlgCita"
                   header="Detalle de Cita"
                   widgetVar="dlgCita"
                   modal="true"
                   resizable="false"
-                  draggable="true"
-                  width="500"
-                  dynamic="true"
-                  styleClass="dialog-elegante">
+                  width="500">
 
-            <h:form id="frmCita" style="padding:10px">
+            <h:form id="frmCita">
 
-                <p:panelGrid columns="1" layout="grid" style="width:100%">
+                <p:panelGrid columns="1" layout="grid" style="width:100%" cellpadding="6">
 
                     <!-- PACIENTE -->
                     <p:outputLabel value="Paciente"/>
-                    <p:selectOneMenu value="#{citaBean.pacienteId}" style="width:100%">
+
+                    <p:selectOneMenu value="#{citaBean.pacienteId}"
+                                     style="width:100%"
+                                     rendered="#{not loginBean.odontologo}">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.pacientes}" var="p"
-                                       itemLabel="#{p.nombreCompleto}"
-                                       itemValue="#{p.id}"/>
+                                       itemLabel="#{p.nombreCompleto}" itemValue="#{p.id}"/>
                     </p:selectOneMenu>
 
-                    <!-- ODONTÓLOGO -->
-                    <p:outputLabel value="Odontólogo" style="margin-top:10px"/>
-                    <p:selectOneMenu value="#{citaBean.odontologoId}" style="width:100%">
+                    <h:outputText value="#{citaBean.cita.paciente.nombreCompleto}"
+                                  rendered="#{loginBean.odontologo}" />
+
+                    <!-- ODONTOLOGO -->
+                    <p:outputLabel value="Odontólogo"/>
+
+                    <p:selectOneMenu value="#{citaBean.odontologoId}"
+                                     style="width:100%"
+                                     rendered="#{not loginBean.odontologo}">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.odontologos}" var="o"
-                                       itemLabel="#{o.nombreCompleto}"
-                                       itemValue="#{o.id}"/>
+                                       itemLabel="#{o.nombreCompleto}" itemValue="#{o.id}"/>
                     </p:selectOneMenu>
 
+                    <h:outputText value="#{citaBean.cita.odontologo.nombreCompleto}"
+                                  rendered="#{loginBean.odontologo}"/>
+
                     <!-- TRATAMIENTO -->
-                    <p:outputLabel value="Tratamiento" style="margin-top:10px"/>
-                    <p:selectOneMenu value="#{citaBean.tratamientoId}" style="width:100%">
+                    <p:outputLabel value="Tratamiento"/>
+
+                    <p:selectOneMenu value="#{citaBean.tratamientoId}"
+                                     style="width:100%"
+                                     rendered="#{not loginBean.odontologo}">
                         <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
                         <f:selectItems value="#{citaBean.tratamientos}" var="t"
                                        itemLabel="#{t.nombre} (Q #{t.costo})"
                                        itemValue="#{t.id}"/>
-
                         <p:ajax event="change"
                                 listener="#{citaBean.actualizarPrecios}"
                                 update="precioBase precioTratamiento total"/>
                     </p:selectOneMenu>
 
+                    <h:outputText value="#{citaBean.cita.tratamiento.nombre}"
+                                  rendered="#{loginBean.odontologo}"/>
+
                     <!-- FECHA -->
-                    <p:outputLabel value="Fecha y Hora" style="margin-top:10px"/>
+                    <p:outputLabel value="Fecha y Hora"/>
+
                     <p:datePicker value="#{citaBean.cita.fechaInicio}"
                                   showTime="true"
                                   hourFormat="24"
-                                  style="width:100%"/>
+                                  style="width:100%"
+                                  rendered="#{not loginBean.odontologo}"/>
+
+                    <h:outputText value="#{citaBean.cita.fechaInicio}"
+                                  rendered="#{loginBean.odontologo}"/>
+
+                    <!-- ESTADO -->
+                    <p:outputLabel value="Estado"/>
+
+                    <p:selectOneMenu value="#{citaBean.estadoNuevo}" style="width:100%">
+                        <f:selectItem itemLabel="Seleccione..." noSelectionOption="true"/>
+                        <f:selectItems value="#{citaBean.estadosDisponibles}" var="e"
+                                       itemValue="#{e}" itemLabel="#{e}"/>
+                    </p:selectOneMenu>
 
                     <!-- NOTAS -->
-                    <p:outputLabel value="Notas" style="margin-top:10px"/>
+                    <p:outputLabel value="Notas"/>
                     <p:inputTextarea value="#{citaBean.cita.notas}"
                                      rows="3"
                                      autoResize="true"
-                                     style="width:100%"/>
+                                     style="width:100%"
+                                     disabled="#{loginBean.odontologo}"/>
 
-                    <!-- PRECIOS -->
-                    <p:separator style="margin:10px 0"/>
+                    <p:separator/>
+
                     <h3>Precios</h3>
 
                     <h:panelGrid columns="2" style="width:100%">
@@ -133,17 +159,27 @@
                 <!-- BOTONES -->
                 <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:15px;">
 
+                    <!-- ADMIN / RECEPCIÓN -->
                     <p:commandButton value="Guardar"
+                                     rendered="#{not loginBean.odontologo}"
+                                     styleClass="p-button-success"
                                      actionListener="#{citaBean.guardar}"
                                      update=":global:msgs :frmAgenda:agenda"
-                                     process="@form"
-                                     styleClass="p-button-success"
                                      oncomplete="PF('dlgCita').hide();"/>
 
-                    <p:commandButton value="Cancelar"
+                    <!-- ODONTÓLOGO SOLO GUARDA ESTADO -->
+                    <p:commandButton value="Guardar Estado"
+                                     rendered="#{loginBean.odontologo}"
+                                     styleClass="p-button-success"
+                                     actionListener="#{citaBean.guardarEstadoOdontologo}"
+                                     update=":global:msgs :frmAgenda:agenda"
+                                     oncomplete="PF('dlgCita').hide();"/>
+
+                    <p:commandButton value="Cerrar"
                                      type="button"
                                      styleClass="p-button-secondary"
                                      onclick="PF('dlgCita').hide();"/>
+
                 </div>
 
             </h:form>
@@ -151,4 +187,5 @@
         </p:dialog>
 
     </ui:define>
+
 </ui:composition>

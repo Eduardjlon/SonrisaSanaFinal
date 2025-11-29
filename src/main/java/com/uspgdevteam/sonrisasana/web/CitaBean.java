@@ -8,11 +8,12 @@ import com.uspgdevteam.sonrisasana.servicio.CitaServicio;
 import com.uspgdevteam.sonrisasana.servicio.PacienteServicio;
 import com.uspgdevteam.sonrisasana.servicio.TratamientoServicio;
 import com.uspgdevteam.sonrisasana.servicio.UsuarioServicio;
+import com.uspgdevteam.sonrisasana.servicio.FacturaServicio;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
-import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
@@ -24,10 +25,11 @@ import org.primefaces.model.ScheduleModel;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 @Named
-@ViewScoped
+@SessionScoped
 public class CitaBean implements Serializable {
 
     @Inject
@@ -42,8 +44,13 @@ public class CitaBean implements Serializable {
     @Inject
     private TratamientoServicio tratamientoServicio;
 
-    private ScheduleModel eventModel;
+    @Inject
+    private FacturaServicio facturaServicio;
 
+    @Inject
+    private LoginBean loginBean;
+
+    private ScheduleModel eventModel;
     private Cita cita;
     private ScheduleEvent<?> evento;
 
@@ -51,10 +58,12 @@ public class CitaBean implements Serializable {
     private List<Usuario> odontologos;
     private List<Tratamiento> tratamientos;
 
-    // IDs para evitar entidades detached
     private Long pacienteId;
     private Long odontologoId;
     private Long tratamientoId;
+
+    private List<String> estadosDisponibles = Arrays.asList("PENDIENTE", "CONFIRMADA", "CANCELADA");
+    private String estadoNuevo;
 
     @PostConstruct
     public void init() {
@@ -63,7 +72,7 @@ public class CitaBean implements Serializable {
         nuevaCita();
     }
 
-    private void cargarListas() {
+    public void cargarListas() {
         pacientes = pacienteServicio.listar();
         odontologos = usuarioServicio.listarOdontologos();
         tratamientos = tratamientoServicio.listar();
@@ -74,36 +83,30 @@ public class CitaBean implements Serializable {
         pacienteId = null;
         odontologoId = null;
         tratamientoId = null;
+        estadoNuevo = null;
     }
 
     private void cargarEventos() {
         eventModel = new DefaultScheduleModel();
-
         List<Cita> lista = citaServicio.listarTodas();
         for (Cita c : lista) {
-
             String titulo = c.getPaciente().getNombreCompleto()
                     + " - " + c.getTratamiento().getNombre();
-
             DefaultScheduleEvent<?> ev = DefaultScheduleEvent.builder()
                     .title(titulo)
                     .startDate(c.getFechaInicio())
                     .endDate(c.getFechaFin())
                     .data(c)
                     .build();
-
             eventModel.addEvent(ev);
         }
     }
 
-    // Seleccionar fecha vacía
     public void onDateSelect(SelectEvent<LocalDateTime> event) {
         nuevaCita();
-        LocalDateTime inicio = event.getObject();
-        cita.setFechaInicio(inicio);
+        cita.setFechaInicio(event.getObject());
     }
 
-    // Seleccionar cita existente
     public void onEventSelect(SelectEvent<ScheduleEvent<?>> ev) {
         evento = ev.getObject();
         cita = (Cita) evento.getData();
@@ -111,74 +114,34 @@ public class CitaBean implements Serializable {
         pacienteId = cita.getPaciente().getId();
         odontologoId = cita.getOdontologo().getId();
         tratamientoId = cita.getTratamiento().getId();
+
+        estadoNuevo = cita.getEstado();
     }
 
-    // Actualizar precios
-    public void actualizarPrecios() {
-        if (tratamientoId == null) {
-            cita.setPrecioTratamiento(null);
-            cita.setTotal(cita.getPrecioBase());
-            return;
-        }
-
-        Tratamiento t = tratamientoServicio.findById(tratamientoId);
-
-        cita.setPrecioTratamiento(t.getCosto());
-        cita.setTotal(cita.getPrecioBase().add(t.getCosto()));
-    }
-
-    // GUARDAR — CORREGIDO
-    public void guardar() {
-        try {
-
-            // Validaciones
-            if (pacienteId == null) {
-                mensaje("Debe seleccionar un paciente.", FacesMessage.SEVERITY_ERROR);
-                return;
-            }
-            if (odontologoId == null) {
-                mensaje("Debe seleccionar un odontólogo.", FacesMessage.SEVERITY_ERROR);
-                return;
-            }
-            if (tratamientoId == null) {
-                mensaje("Debe seleccionar un tratamiento.", FacesMessage.SEVERITY_ERROR);
-                return;
-            }
-            if (cita.getFechaInicio() == null) {
-                mensaje("Debe seleccionar fecha y hora.", FacesMessage.SEVERITY_ERROR);
-                return;
-            }
-
-            // Recuperar entidades manejadas
-            Paciente pac = pacienteServicio.findById(pacienteId);
-            Usuario odo = usuarioServicio.findById(odontologoId);
-            Tratamiento trat = tratamientoServicio.findById(tratamientoId);
-
-            cita.setPaciente(pac);
-            cita.setOdontologo(odo);
-            cita.setTratamiento(trat);
-
-            // Calcular fecha fin REAL
-            cita.setFechaFin(cita.getFechaInicio().plusMinutes(trat.getDuracionMinutos()));
-
-            // Costos
-            cita.setPrecioTratamiento(trat.getCosto());
-            cita.setTotal(cita.getPrecioBase().add(trat.getCosto()));
-
-            // Crear o actualizar
-            if (cita.getId() == null) {
-                citaServicio.crear(cita);
-                mensaje("Cita creada correctamente", FacesMessage.SEVERITY_INFO);
-            } else {
-                citaServicio.actualizar(cita);
-                mensaje("Cita actualizada correctamente", FacesMessage.SEVERITY_INFO);
-            }
-
+    // Confirmar cita: cambia estado y genera factura automáticamente
+    public void confirmarCita() {
+        if (cita != null && cita.getId() != null) {
+            citaServicio.actualizarEstado(cita.getId(), "CONFIRMADA");
+            facturaServicio.crearFacturaDesdeCita(cita);
+            mensaje("Cita confirmada y factura generada automáticamente", FacesMessage.SEVERITY_INFO);
             cargarEventos();
-            nuevaCita();
+        }
+    }
 
-        } catch (Exception e) {
-            mensaje("Error: " + e.getMessage(), FacesMessage.SEVERITY_ERROR);
+    public void cancelarCita() {
+        if (cita != null && cita.getId() != null) {
+            citaServicio.actualizarEstado(cita.getId(), "CANCELADA");
+            mensaje("Cita cancelada", FacesMessage.SEVERITY_WARN);
+            cargarEventos();
+        }
+    }
+
+    public void guardarEstado() {
+        if (cita != null && estadoNuevo != null && !estadoNuevo.isEmpty()) {
+            citaServicio.actualizarEstado(cita.getId(), estadoNuevo);
+            mensaje("Estado actualizado a " + estadoNuevo, FacesMessage.SEVERITY_INFO);
+            cargarEventos();
+            estadoNuevo = null;
         }
     }
 
@@ -186,19 +149,29 @@ public class CitaBean implements Serializable {
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(sev, msg, null));
     }
 
-    // GETTERS
+    // GETTERS / SETTERS
     public ScheduleModel getEventModel() { return eventModel; }
     public Cita getCita() { return cita; }
     public List<Paciente> getPacientes() { return pacientes; }
     public List<Usuario> getOdontologos() { return odontologos; }
     public List<Tratamiento> getTratamientos() { return tratamientos; }
-
+    public List<String> getEstadosDisponibles() { return estadosDisponibles; }
+    public String getEstadoNuevo() { return estadoNuevo; }
+    public void setEstadoNuevo(String estadoNuevo) { this.estadoNuevo = estadoNuevo; }
     public Long getPacienteId() { return pacienteId; }
     public void setPacienteId(Long pacienteId) { this.pacienteId = pacienteId; }
-
     public Long getOdontologoId() { return odontologoId; }
     public void setOdontologoId(Long odontologoId) { this.odontologoId = odontologoId; }
-
     public Long getTratamientoId() { return tratamientoId; }
     public void setTratamientoId(Long tratamientoId) { this.tratamientoId = tratamientoId; }
+
+    public boolean isOdonto() { return loginBean != null && loginBean.isOdontologo(); }
+    public boolean isRecepcionista() { return loginBean != null && loginBean.isRecepcionista(); }
+
+    public String getFechaCompleta() {
+        if (cita != null && cita.getFechaInicio() != null) {
+            return cita.getFechaInicio().toString();
+        }
+        return "";
+    }
 }

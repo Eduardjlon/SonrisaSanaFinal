@@ -23,10 +23,6 @@ public class LoginBean implements Serializable {
 
     private Usuario usuarioLogueado;
 
-    // ===========================================================
-    // LOGIN PRINCIPAL
-    // ===========================================================
-
     public void login() {
 
         Usuario u = usuarioServicio.login(username, password);
@@ -39,31 +35,23 @@ public class LoginBean implements Serializable {
             return;
         }
 
-        // Guardar usuario en sesión
         this.usuarioLogueado = u;
-
-        // Limpiar variables
         this.username = null;
         this.password = null;
 
         try {
-            // Redirigir según rol
             if (u.esAdministrador()) {
                 redirect("dashboard.xhtml");
             } else if (u.esOdontologo()) {
-                redirect("agenda.xhtml");
+                redirect("citas.xhtml");
             } else {
-                redirect("pacientes.xhtml");
+                redirect("citas.xhtml");
             }
 
         } catch (IOException e) {
             throw new RuntimeException("Error al redirigir después del login", e);
         }
     }
-
-    // ===========================================================
-    // LOGOUT
-    // ===========================================================
 
     public void logout() {
         try {
@@ -74,23 +62,10 @@ public class LoginBean implements Serializable {
         }
     }
 
-    // ===========================================================
-    // MÉTODO DE REDIRECCIÓN
-    // ===========================================================
-
     private void redirect(String url) throws IOException {
         FacesContext.getCurrentInstance()
                 .getExternalContext()
                 .redirect(url);
-    }
-
-    // ===========================================================
-    // MÉTODOS DE ROL
-    // ===========================================================
-
-    public String getRol() {
-        if (usuarioLogueado == null || usuarioLogueado.getRol() == null) return null;
-        return usuarioLogueado.getRol().getNombre();
     }
 
     public boolean isAdministrador() {
@@ -104,10 +79,6 @@ public class LoginBean implements Serializable {
     public boolean isRecepcionista() {
         return usuarioLogueado != null && usuarioLogueado.esRecepcionista();
     }
-
-    // ===========================================================
-    // GETTERS / SETTERS
-    // ===========================================================
 
     public Usuario getUsuarioLogueado() {
         return usuarioLogueado;

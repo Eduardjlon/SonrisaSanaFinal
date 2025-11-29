@@ -2,7 +2,7 @@ package com.uspgdevteam.sonrisasana.entidad;
 
 import jakarta.persistence.*;
 import java.io.Serializable;
-import java.util.List;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "seguros")
@@ -12,37 +12,38 @@ public class Seguro implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @OneToMany(mappedBy = "seguro")
-    private List<Factura> facturas;
+    @Column(name = "descripcion", length = 255)
+    private String descripcion;
 
-    public Seguro() {}
+    @Column(name = "cobertura", precision = 10, scale = 2, nullable = false)
+    private BigDecimal cobertura;
 
-    public Long getId() {
-        return id;
+    @Column(name = "activo", nullable = false)
+    private boolean activo = true;
+
+    public Seguro() {
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    // ===============================
+    // GETTERS / SETTERS
+    // ===============================
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getNombre() {
-        return nombre;
-    }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
+    public String getDescripcion() { return descripcion; }
+    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
-    public List<Factura> getFacturas() {
-        return facturas;
-    }
+    public BigDecimal getCobertura() { return cobertura; }
+    public void setCobertura(BigDecimal cobertura) { this.cobertura = cobertura; }
 
-    public void setFacturas(List<Factura> facturas) {
-        this.facturas = facturas;
-    }
+    public boolean isActivo() { return activo; }
+    public void setActivo(boolean activo) { this.activo = activo; }
 
     @Override
     public boolean equals(Object o) {
@@ -57,4 +58,3 @@ public class Seguro implements Serializable {
         return id != null ? id.hashCode() : 0;
     }
 }
-

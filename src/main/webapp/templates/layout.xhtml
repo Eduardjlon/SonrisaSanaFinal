@@ -8,20 +8,23 @@
 
 <h:head>
     <title>Sonrisa Sana - Sistema de Gestión Clínica</title>
+
     <h:outputStylesheet library="css" name="layout.css"/>
-    <link rel="stylesheet" type="text/css"
+    <link rel="stylesheet"
           href="#{request.contextPath}/webjars/primeflex/3.3.1/primeflex.min.css"/>
 </h:head>
 
 <h:body>
 
+    <!-- BARRA SUPERIOR -->
     <h:form id="menuForm">
         <p:menubar>
 
-            <!-- Admin -->
-
+            <!-- ===========================
+                 ADMINISTRADOR
+            ============================ -->
             <p:submenu label="Administrador" icon="pi pi-shield"
-                       rendered="#{loginBean.rol == 'ADMINISTRADOR'}">
+                       rendered="#{loginBean.administrador}">
 
                 <p:menuitem value="Dashboard"
                             outcome="/dashboard.xhtml"
@@ -39,24 +42,24 @@
                             outcome="/reportes.xhtml"
                             icon="pi pi-file"/>
 
-                <p:menuitem value="Tratamienos"
+                <p:menuitem value="Tratamientos"
                             outcome="/tratamientos.xhtml"
-                            icon="pi pi-users"/>
+                            icon="pi pi-briefcase"/>
 
             </p:submenu>
 
-
-            <!-- Odontólogo -->
-
-            <p:submenu label="Odontólogo" icon="pi pi-briefcase"
-                       rendered="#{loginBean.rol == 'ODONTOLOGO'}">
+            <!-- ===========================
+                 ODONTÓLOGO
+            ============================ -->
+            <p:submenu label="Odontólogo" icon="pi pi-user"
+                       rendered="#{loginBean.odontologo}">
 
                 <p:menuitem value="Mis Pacientes"
                             outcome="/pacientes.xhtml"
                             icon="pi pi-users"/>
 
                 <p:menuitem value="Agenda"
-                            outcome="/agenda.xhtml"
+                            outcome="/citas.xhtml"
                             icon="pi pi-calendar"/>
 
                 <p:menuitem value="Mis Archivos"
@@ -66,10 +69,11 @@
             </p:submenu>
 
 
-            <!-- Recepcionista -->
-
+            <!-- ===========================
+                 RECEPCIONISTA
+            ============================ -->
             <p:submenu label="Recepcionista" icon="pi pi-id-card"
-                       rendered="#{loginBean.rol == 'RECEPCIONISTA'}">
+                       rendered="#{loginBean.recepcionista}">
 
                 <p:menuitem value="Citas"
                             outcome="/citas.xhtml"
@@ -82,19 +86,26 @@
                 <p:menuitem value="Facturación"
                             outcome="/facturacion.xhtml"
                             icon="pi pi-dollar"/>
+
             </p:submenu>
 
-            <!-- Log out -->
+
+            <!-- ===========================
+                 LOGOUT
+            ============================ -->
             <p:menuitem value="Cerrar sesión"
-                        actionListener="#{loginBean.logout}"
-                        icon="pi pi-sign-out"/>
+                        icon="pi pi-sign-out"
+                        actionListener="#{loginBean.logout}"/>
 
         </p:menubar>
     </h:form>
 
+
+    <!-- CONTENIDO -->
     <div class="p-m-3">
         <ui:insert name="content"/>
     </div>
 
 </h:body>
+
 </html>
